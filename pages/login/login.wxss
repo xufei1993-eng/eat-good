@@ -1,0 +1,16 @@
+.login-page { min-height: 100vh; box-sizing: border-box; padding: 150rpx 52rpx 60rpx; background: #fbf7ef; color: #243541; }
+.login-brand { display: flex; align-items: center; gap: 16rpx; color: #2e8f88; font-size: 34rpx; font-weight: 800; }
+.brand-mark { width: 72rpx; height: 72rpx; border-radius: 20rpx; background: #e6f1ea; color: #2e8f88; line-height: 72rpx; text-align: center; font-size: 34rpx; }
+.login-title { display: block; margin-top: 90rpx; font-size: 42rpx; font-weight: 800; }
+.login-subtitle { display: block; margin-top: 18rpx; color: #72828c; font-size: 23rpx; line-height: 1.65; }
+.login-notice { margin-top: 48rpx; padding: 24rpx; border-radius: 14rpx; background: #fff; border: 2rpx solid #e4ddcf; }
+.login-notice text { display: block; color: #72828c; font-size: 21rpx; line-height: 1.6; }
+.login-notice .notice-title { margin-bottom: 8rpx; color: #243541; font-size: 23rpx; font-weight: 800; }
+.nickname-field { margin-top: 28rpx; }
+.nickname-field > text { display: block; margin-bottom: 10rpx; font-size: 22rpx; font-weight: 700; }
+.nickname-field input { box-sizing: border-box; width: 100%; height: 84rpx; padding: 0 22rpx; border: 2rpx solid #e4ddcf; border-radius: 12rpx; background: #fff; }
+.agreement { margin-top: 22rpx; display: flex; align-items: flex-start; gap: 10rpx; color: #72828c; font-size: 19rpx; line-height: 1.5; }
+.agreement checkbox { transform: scale(.8); transform-origin: left top; }
+.login-button { width: 100%; height: 86rpx; margin-top: 34rpx; border-radius: 12rpx; background: #2e8f88; color: #fff; font-size: 25rpx; line-height: 86rpx; font-weight: 800; }
+.login-footnote { display: block; margin-top: 22rpx; text-align: center; color: #9aa39e; font-size: 18rpx; }
+

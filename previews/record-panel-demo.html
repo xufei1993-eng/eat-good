@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>记录一餐 · 统一记录面板</title>
+  <style>
+    :root{--paper:#fbf7ef;--ink:#243541;--muted:#718078;--line:#e4ddcf;--green:#2e8f88;--green-soft:#e6f1ea;--card:#fffdf9;--peach:#f6ddd5}
+    *{box-sizing:border-box}body{margin:0;background:#202522;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink)}
+    .phone{width:min(100%,430px);min-height:100dvh;margin:auto;background:var(--paper);padding:env(safe-area-inset-top) 18px 34px;overflow:auto}
+    .top{height:70px;display:flex;align-items:center;justify-content:space-between}.back{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:var(--card);font-size:24px;color:var(--ink)}.top h1{font-size:19px;margin:0;font-weight:800}.top span{width:38px}
+    .date{margin:8px 0 14px;padding:10px 2px;display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}.date b{color:var(--green);font-weight:700}
+    .mode-panel{padding:0;background:transparent}.mode-head{display:none}
+    .modes{display:grid;grid-template-columns:1.45fr 1fr 1fr 1fr;gap:8px;margin-top:0}.mode{min-height:74px;padding:10px 8px;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--muted);text-align:left;cursor:pointer}.mode .icon{display:block;width:21px;height:21px;object-fit:contain;filter:invert(42%) sepia(24%) saturate(1015%) hue-rotate(127deg) brightness(86%)}.mode strong{display:block;margin-top:7px;font-size:13px;color:var(--ink)}.mode em{display:none}.mode.active{border:2px solid var(--green);background:var(--green-soft)}
+    .flow{margin-top:14px}.primary{padding:20px;background:var(--green-soft);border-radius:18px}.primary h3{margin:0;font-size:20px}.primary p{margin:6px 0 16px;color:var(--muted);font-size:13px}.camera{height:145px;border-radius:14px;border:1px dashed #9dc7b7;background:linear-gradient(145deg,#eef8f2,#dcefe5);display:flex;align-items:center;justify-content:center;color:var(--green);font-weight:700}.camera span{display:block;text-align:center;font-size:42px}.cta{width:100%;height:48px;margin-top:14px;border:0;border-radius:24px;background:var(--green);color:white;font-size:16px;font-weight:800;cursor:pointer}.hint{margin:11px 0 0;text-align:center;color:var(--muted);font-size:12px}
+    .search,.plan,.manual{display:none;padding:18px;background:var(--card);border:1px solid var(--line);border-radius:18px}.flow.search-mode .search,.flow.plan-mode .plan,.flow.manual-mode .manual{display:block}.flow.search-mode .primary,.flow.plan-mode .primary,.flow.manual-mode .primary{display:none}.search label,.manual label{display:block;font-size:14px;font-weight:800;margin-bottom:10px}.search input,.manual input{width:100%;height:46px;padding:0 14px;border:1px solid var(--line);border-radius:23px;background:#fff;color:var(--ink);font-size:14px}.suggestions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.suggestions button,.plan button{padding:9px 12px;border:1px solid var(--line);border-radius:18px;background:var(--green-soft);color:#245c52;font-size:12px}.plan h3,.manual h3{margin:0 0 6px;font-size:18px}.plan p,.manual p{margin:0 0 16px;color:var(--muted);font-size:13px}.plan-item{padding:14px;border:1px solid var(--line);border-radius:14px;background:#f7faf7;display:flex;justify-content:space-between;align-items:center}.plan-item b{display:block;font-size:15px}.plan-item span{font-size:12px;color:var(--muted)}
+    .status{margin-top:14px;padding:12px 14px;background:#fff7e8;border-radius:12px;color:#806746;font-size:12px;display:none}
+    @media(max-width:360px){.modes{grid-template-columns:repeat(2,1fr)}.mode:first-child{grid-column:span 2}}
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <header class="top"><button class="back" aria-label="返回">‹</button><h1>记录一餐</h1><span></span></header>
+    <div class="date"><span>记录日期</span><b>2026年8月26日 ›</b></div>
+    <section class="mode-panel">
+      <div class="modes" role="tablist">
+        <button class="mode active" data-mode="photo" role="tab"><img class="icon" src="../assets/icons/camera.svg" alt=""/><strong>拍照识别</strong></button>
+        <button class="mode" data-mode="search" role="tab"><img class="icon" src="../assets/icons/search.svg" alt=""/><strong>搜索食物</strong></button>
+        <button class="mode" data-mode="plan" role="tab"><img class="icon" src="../assets/icons/notebook-tabs.svg" alt=""/><strong>计划餐</strong></button>
+        <button class="mode" data-mode="manual" role="tab"><img class="icon" src="../assets/icons/pencil.svg" alt=""/><strong>手工录入</strong></button>
+      </div>
+    </section>
+    <section class="flow" id="flow">
+      <div class="primary"><h3>拍下这顿饭</h3><p>AI 会识别菜品、份量和营养组成</p><div class="camera"><div><span>⌾</span>点击拍照或从相册选择</div></div><button class="cta" id="photoBtn">拍照识别</button><p class="hint">识别后会先给你一份可核对的结果</p></div>
+      <div class="search"><label for="food">搜索食物或菜名</label><input id="food" placeholder="例如：牛肉面、低脂酸奶"/><div class="suggestions"><button>牛肉面</button><button>鸡胸肉沙拉</button><button>低脂酸奶</button></div></div>
+      <div class="plan"><h3>吃的是计划餐</h3><p>复用今天为你安排好的营养数据</p><div class="plan-item"><div><b>牛肉面配酥饼</b><span>午餐 · 约 620 千卡</span></div><button>采用这份</button></div></div>
+      <div class="manual"><h3>手工录入</h3><p>适合混合菜或需要精确填写的食物</p><label for="manualFood">食物名称</label><input id="manualFood" placeholder="例如：煮鸡蛋"/><button class="cta">继续填写</button></div>
+      <div class="status" id="status">已打开拍照入口，识别完成后会显示结果。</div>
+    </section>
+  </main>
+  <script>
+    const flow=document.querySelector('#flow'),status=document.querySelector('#status');
+    document.querySelectorAll('.mode').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.mode').forEach(item=>item.classList.remove('active'));btn.classList.add('active');flow.className='flow '+(btn.dataset.mode==='photo'?'':btn.dataset.mode+'-mode');status.style.display='none';}));
+    document.querySelector('#photoBtn').addEventListener('click',()=>{status.textContent='已打开拍照入口，识别完成后会显示结果。';status.style.display='block'});
+  </script>
+</body>
+</html>

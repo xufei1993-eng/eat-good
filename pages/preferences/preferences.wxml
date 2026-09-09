@@ -1,0 +1,233 @@
+<view class="prefs-page">
+  <view class="safe-top" style="height: {{headerInset}}px"></view>
+  <block wx:if="{{isOnboarding}}">
+    <view class="onboarding-backdrop">
+      <view class="onboarding-brand"><view>食</view><text>吃对饭</text></view>
+      <text class="onboarding-slogan">今天怎么吃，从了解你开始</text>
+    </view>
+    <view class="onboarding-mask">
+      <view class="onboarding-dialog" role="dialog" aria-label="创建健康档案">
+        <view class="dialog-head"><view><text>{{onboardingStep === 1 ? '先了解一下你' : onboardingStep === 2 ? '你的基本情况' : '安全与口味'}}</text><text>{{onboardingStep === 1 ? '先选择性别，再选择适合你的健康目标。' : onboardingStep === 2 ? '用于估算每日营养目标。' : '告诉我们需要避开的食物，以及你喜欢的菜系。'}}</text></view><view class="step-mark" aria-label="第 {{onboardingStep}} 步，共 3 步"><text class="{{onboardingStep >= 1 ? 'active' : ''}}"></text><text class="{{onboardingStep >= 2 ? 'active' : ''}}"></text><text class="{{onboardingStep >= 3 ? 'active' : ''}}"></text></view></view>
+        <scroll-view class="dialog-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+          <view wx:if="{{onboardingStep === 1}}" class="onboarding-modes step-one-modes">
+            <view class="nickname-onboarding"><text class="dialog-label">你的昵称</text><input type="nickname" maxlength="24" value="{{nickname}}" data-field="nickname" bindinput="updateProfileField" bindblur="updateProfileField" placeholder="请输入昵称" /></view>
+            <view class="onboarding-gender-block"><text class="dialog-label">请选择性别</text><view class="gender-control onboarding-gender"><button data-gender="female" class="{{gender === 'female' ? 'selected' : ''}}" bindtap="chooseGender">女性</button><button data-gender="male" class="{{gender === 'male' ? 'selected' : ''}}" bindtap="chooseGender">男性</button></view></view>
+            <text wx:if="{{gender}}" class="onboarding-mode-label">选择健康目标</text>
+            <block wx:if="{{gender}}"><button wx:for="{{profileModes}}" wx:key="id" data-mode="{{item.id}}" disabled="{{item.disabled}}" class="onboarding-mode {{profileMode === item.id ? 'selected' : ''}} {{item.disabled ? 'disabled' : ''}} {{item.genderRestricted ? 'gender-restricted' : ''}}" bindtap="chooseProfileMode"><image wx:if="{{item.avatar}}" class="mode-avatar" src="{{item.avatar}}" mode="aspectFill"></image><view wx:else class="mode-symbol">{{item.symbol}}</view><view class="mode-copy"><view><text>{{item.title}}</text><text wx:if="{{item.disabled}}" class="mode-coming">{{item.genderRestricted ? '女性适用' : '开发中'}}</text></view><text>{{item.caption}}</text></view><view class="mode-check">{{profileMode === item.id ? '✓' : ''}}</view></button></block>
+          </view>
+
+          <view wx:if="{{onboardingStep === 2}}" class="dialog-profile step-content-first">
+            <text class="dialog-label">基础身体信息</text>
+            <text class="field-help">年龄、身高和体重仅用于能量估算</text>
+            <view class="pregnancy-gender-note">已按{{gender === 'female' ? '女性' : '男性'}}生理参数估算，可返回上一步修改</view>
+            <view class="profile-fields">
+              <view><text>年龄</text><view><input type="number" value="{{age}}" data-field="age" bindinput="updateProfileField" placeholder="如 28" /><text>岁</text></view></view>
+              <view><text>身高</text><view><input type="digit" value="{{heightCm}}" data-field="heightCm" bindinput="updateProfileField" placeholder="如 165" /><text>cm</text></view></view>
+              <view class="wide-field"><text>当前体重</text><view><input type="digit" value="{{currentWeightKg}}" data-field="currentWeightKg" bindinput="updateProfileField" placeholder="如 55" /><text>kg</text></view></view>
+              <view wx:if="{{profileMode === 'pregnancy'}}" class="wide-field"><text>孕前体重</text><view><input type="digit" value="{{prePregnancyWeightKg}}" data-field="prePregnancyWeightKg" bindinput="updateProfileField" placeholder="如 52" /><text>kg</text></view></view>
+            </view>
+            <view wx:if="{{profileTargets}}" class="profile-preview"><text>估算每日目标 {{profileTargets.dailyKcal}} 千卡</text><text wx:if="{{profileMode === 'pregnancy'}}">孕前 BMI {{profileTargets.prePregnancyBmi}} · {{profileTargets.prePregnancyBmiLabel}}</text></view>
+          </view>
+
+          <view wx:if="{{onboardingStep === 2 && profileMode === 'pregnancy'}}" class="dialog-context">
+            <text class="dialog-label">当前孕期阶段</text>
+            <view class="segment-control compact-segment"><button class="{{trimester === 1 ? 'selected' : ''}}" data-value="1" bindtap="chooseTrimester">孕早期</button><button class="{{trimester === 2 ? 'selected' : ''}}" data-value="2" bindtap="chooseTrimester">孕中期</button><button class="{{trimester === 3 ? 'selected' : ''}}" data-value="3" bindtap="chooseTrimester">孕晚期</button></view>
+            <view class="dialog-switch"><text>妊娠糖尿病</text><switch checked="{{gestationalDiabetes}}" color="#486958" bindchange="updateGestationalDiabetes" /></view>
+            <view class="dialog-switch"><text>妊娠期高血压</text><switch checked="{{pregnancyHypertension}}" color="#486958" bindchange="updatePregnancyHypertension" /></view>
+          </view>
+
+          <view wx:if="{{onboardingStep === 2 && profileMode === 'fatloss'}}" class="dialog-context">
+            <text class="dialog-label">日常运动强度</text>
+            <view class="segment-control compact-segment"><button class="{{activityLevel === 'low' ? 'selected' : ''}}" data-value="low" bindtap="chooseActivity">较少运动</button><button class="{{activityLevel === 'medium' ? 'selected' : ''}}" data-value="medium" bindtap="chooseActivity">规律运动</button><button class="{{activityLevel === 'high' ? 'selected' : ''}}" data-value="high" bindtap="chooseActivity">高强度</button></view>
+          </view>
+
+          <view wx:if="{{onboardingStep === 3}}" class="dialog-allergy step-content-first">
+            <text class="dialog-label">是否存在已知过敏原？</text>
+            <view class="allergy-status"><button data-status="none" class="{{allergyStatus === 'none' ? 'selected' : ''}}" bindtap="chooseAllergyStatus">没有</button><button data-status="has" class="{{allergyStatus === 'has' ? 'selected' : ''}}" bindtap="chooseAllergyStatus">有，需要避开</button></view>
+            <view wx:if="{{allergyStatus === 'has'}}" class="dialog-allergen-grid"><button wx:for="{{allergens}}" wx:key="label" data-index="{{index}}" class="{{item.checked ? 'selected' : ''}}" bindtap="toggleAllergen"><view>{{item.checked ? '✓' : ''}}</view><text>{{item.label}}</text></button></view>
+            <view class="dialog-cuisine-block">
+              <view class="dialog-cuisine-head"><view><text class="dialog-label">喜欢什么菜系？</text><text class="field-help">可多选，最多 10 种</text></view><text>{{selectedCuisineCount}} / 10</text></view>
+              <view class="dialog-cuisine-grid"><button wx:for="{{tastes}}" wx:key="label" data-index="{{index}}" class="{{item.checked ? 'selected' : ''}}" bindtap="toggleTaste">{{item.label}}<text>{{item.checked ? '✓' : '+'}}</text></button></view>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="wizard-actions">
+          <button wx:if="{{onboardingStep > 1}}" class="dialog-back" bindtap="previousOnboarding">上一步</button>
+          <button wx:if="{{onboardingStep < 3}}" class="dialog-submit" bindtap="nextOnboarding" hover-class="primary-pressed">继续</button>
+          <button wx:else class="dialog-submit" bindtap="save" hover-class="primary-pressed">生成我的计划</button>
+        </view>
+      </view>
+    </view>
+  </block>
+  <block wx:elif="{{isEditing}}">
+  <view class="prefs-topbar">
+    <button wx:if="{{!isOnboarding}}" class="back" bindtap="goBack" hover-class="control-pressed" aria-label="返回上一页"><view class="back-drawn"></view></button><view wx:else class="topbar-spacer"></view>
+    <text>{{isOnboarding ? '创建健康档案' : '编辑档案'}}</text>
+    <view class="topbar-spacer"></view>
+  </view>
+
+  <view class="prefs-intro">
+    <view class="prefs-copy">
+      <text class="prefs-title">{{isOnboarding ? '先了解你\n再安排每一餐' : '为不同目标\n匹配不同饮食'}}</text>
+      <text class="prefs-caption">{{isOnboarding ? '你的目标和安全设置将决定之后看到的全部推荐' : '推荐规则会随当前人群模式调整'}}</text>
+    </view>
+    <view class="intro-index"><text>01</text><view></view><text>CARE</text></view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">选择使用模式</text>
+    <view class="profile-mode-list">
+      <button wx:for="{{profileModes}}" wx:key="id" data-mode="{{item.id}}" disabled="{{item.disabled}}" class="profile-mode {{profileMode === item.id ? 'selected' : ''}} {{item.disabled ? 'disabled' : ''}}" bindtap="chooseProfileMode">
+        <text>{{item.title}}</text><text>{{item.caption}}</text>
+      </button>
+    </view>
+  </view>
+
+  <view class="section body-profile-section">
+    <text class="section-title">基础身体信息</text>
+    <text class="section-hint">用于估算基础代谢、每日能量和蛋白质目标</text>
+    <view wx:if="{{profileMode !== 'pregnancy'}}" class="gender-control"><button data-gender="female" class="{{gender === 'female' ? 'selected' : ''}}" bindtap="chooseGender">女性</button><button data-gender="male" class="{{gender === 'male' ? 'selected' : ''}}" bindtap="chooseGender">男性</button></view>
+    <view wx:else class="pregnancy-gender-note full-note">孕期档案已按女性生理参数计算</view>
+    <view class="profile-fields full-profile-fields">
+      <view><text>年龄</text><view><input type="number" value="{{age}}" data-field="age" bindinput="updateProfileField" placeholder="如 28" /><text>岁</text></view></view>
+      <view><text>身高</text><view><input type="digit" value="{{heightCm}}" data-field="heightCm" bindinput="updateProfileField" placeholder="如 165" /><text>cm</text></view></view>
+      <view><text>当前体重</text><view><input type="digit" value="{{currentWeightKg}}" data-field="currentWeightKg" bindinput="updateProfileField" placeholder="如 55" /><text>kg</text></view></view>
+      <view wx:if="{{profileMode === 'pregnancy'}}"><text>孕前体重</text><view><input type="digit" value="{{prePregnancyWeightKg}}" data-field="prePregnancyWeightKg" bindinput="updateProfileField" placeholder="如 52" /><text>kg</text></view></view>
+    </view>
+    <view wx:if="{{profileTargets}}" class="target-summary"><view><text>{{profileTargets.dailyKcal}}</text><text>每日估算千卡</text></view><view><text>{{profileTargets.protein}}g</text><text>每日蛋白目标</text></view><view><text>{{profileMode === 'pregnancy' ? profileTargets.prePregnancyBmi : profileTargets.currentBmi}}</text><text>{{profileMode === 'pregnancy' ? '孕前 BMI · ' + profileTargets.prePregnancyBmiLabel : '当前 BMI'}}</text></view></view>
+    <text class="calculation-note">计算结果为一般估算；孕期、慢病或医生已有方案时，以专业方案为准。</text>
+  </view>
+
+  <view wx:if="{{profileMode === 'pregnancy'}}" class="section contextual-section">
+    <text class="section-title">孕期信息</text>
+    <text class="section-hint">用于食品安全排序，不替代医生或营养师方案</text>
+    <view class="segment-control">
+      <button class="{{trimester === 1 ? 'selected' : ''}}" data-value="1" bindtap="chooseTrimester">孕早期</button>
+      <button class="{{trimester === 2 ? 'selected' : ''}}" data-value="2" bindtap="chooseTrimester">孕中期</button>
+      <button class="{{trimester === 3 ? 'selected' : ''}}" data-value="3" bindtap="chooseTrimester">孕晚期</button>
+    </view>
+    <view class="risk-row"><view><text>妊娠糖尿病</text><text>推荐目标应遵循医生个体化方案</text></view><switch checked="{{gestationalDiabetes}}" color="#486958" bindchange="updateGestationalDiabetes" /></view>
+    <view class="risk-row"><view><text>妊娠期高血压</text><text>外卖备注将额外强调少盐</text></view><switch checked="{{pregnancyHypertension}}" color="#486958" bindchange="updatePregnancyHypertension" /></view>
+  </view>
+
+  <view wx:if="{{profileMode === 'fatloss'}}" class="section contextual-section">
+    <text class="section-title">运动强度</text>
+    <view class="segment-control">
+      <button class="{{activityLevel === 'low' ? 'selected' : ''}}" data-value="low" bindtap="chooseActivity">较少运动</button>
+      <button class="{{activityLevel === 'medium' ? 'selected' : ''}}" data-value="medium" bindtap="chooseActivity">规律运动</button>
+      <button class="{{activityLevel === 'high' ? 'selected' : ''}}" data-value="high" bindtap="chooseActivity">高强度</button>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-head"><text>早餐热量区间</text><text class="value">{{calorieMin}}-{{calorieMax}} 千卡</text></view>
+    <text class="section-hint">区间比单个目标值更符合真实饮食波动</text>
+    <view class="range-label"><text>最低 {{calorieMin}}</text><text>最高 {{calorieMax}}</text></view>
+    <slider min="300" max="600" step="10" value="{{calorieMin}}" activeColor="#486958" backgroundColor="#DDE2DC" block-color="#FFFFFF" block-size="24" bindchange="updateCalorieMin" />
+    <slider min="350" max="700" step="10" value="{{calorieMax}}" activeColor="#486958" backgroundColor="#DDE2DC" block-color="#FFFFFF" block-size="24" bindchange="updateCalorieMax" />
+  </view>
+
+  <view class="section">
+    <view class="section-head"><text>最低蛋白质目标</text><text class="value">{{proteinMin}}g</text></view>
+    <text class="section-hint">按早餐常见份量估算，不等于全天目标</text>
+    <slider min="15" max="40" step="1" value="{{proteinMin}}" activeColor="#486958" backgroundColor="#DDE2DC" block-color="#FFFFFF" block-size="24" bindchange="updateProtein" />
+  </view>
+
+  <view class="section">
+    <view class="section-head"><text>早餐预算</text><text class="value">¥{{budget}} 以内</text></view>
+    <text class="section-hint">推荐会优先匹配这个价格范围</text>
+    <slider min="15" max="60" step="5" value="{{budget}}" activeColor="#486958" backgroundColor="#DDE2DC" block-color="#FFFFFF" block-size="24" bindchange="updateBudget" />
+  </view>
+
+  <view class="section">
+    <view class="cuisine-heading"><view><text class="section-title">菜系偏好</text><text class="section-hint">点击添加或移除，最多选择 10 种</text></view><text>{{selectedCuisineCount}} / 10</text></view>
+    <view class="taste-grid">
+      <button wx:for="{{tastes}}" wx:key="label" data-index="{{index}}" class="taste {{item.checked ? 'selected' : ''}}" bindtap="toggleTaste" hover-class="control-pressed" aria-label="{{item.label}}，{{item.checked ? '已添加' : '未添加'}}"><text>{{item.label}}</text><text>{{item.checked ? '−' : '+'}}</text></button>
+    </view>
+  </view>
+
+  <view class="section allergy-section">
+    <view class="allergy-heading">
+      <view><text class="section-title">需要避开的过敏原</text><text class="section-hint">请选择确认会过敏的成分</text></view>
+      <text class="allergy-badge">重要</text>
+    </view>
+    <view class="allergy-status">
+      <button data-status="none" class="{{allergyStatus === 'none' ? 'selected' : ''}}" bindtap="chooseAllergyStatus">没有已知过敏</button>
+      <button data-status="has" class="{{allergyStatus === 'has' ? 'selected' : ''}}" bindtap="chooseAllergyStatus">有，需要避开</button>
+    </view>
+    <view wx:if="{{allergyStatus === 'has'}}" class="allergen-grid">
+      <button wx:for="{{allergens}}" wx:key="label" data-index="{{index}}" class="allergen {{item.checked ? 'selected' : ''}}" bindtap="toggleAllergen" hover-class="control-pressed" aria-label="{{item.label}}，{{item.checked ? '需要避开' : '未选择'}}">
+        <view class="allergen-check">{{item.checked ? '✓' : ''}}</view><text>{{item.label}}</text>
+      </button>
+    </view>
+    <view wx:if="{{allergyStatus === 'has'}}" class="allergy-notice"><view class="notice-mark">!</view><text>不同门店配方和制作环境不同，下单前仍需向商家确认配料及交叉接触风险。</text></view>
+  </view>
+
+  <view class="section settings">
+    <view class="setting-row"><view><text class="setting-title">本周轮换推荐</text><text class="setting-caption">本周已经选择过的早餐尽量不重复</text></view><switch checked="{{avoidRepeat}}" color="#5D806A" bindchange="updateRepeat" /></view>
+    <view class="setting-row"><view><text class="setting-title">默认无糖</text><text class="setting-caption">豆浆、咖啡和酸奶优先选择无糖</text></view><switch checked="{{noSugar}}" color="#5D806A" bindchange="updateSugar" /></view>
+  </view>
+
+  <view class="section reminder-section">
+    <view class="allergy-heading"><view><text class="section-title">用餐提醒</text><text class="section-hint">时间会保存，微信推送还需用户订阅授权</text></view></view>
+    <view wx:for="{{reminders}}" wx:key="id" class="reminder-row">
+      <switch checked="{{item.enabled}}" color="#486958" data-index="{{index}}" bindchange="updateReminder" />
+      <text>{{item.label}}</text>
+      <picker mode="time" value="{{item.time}}" data-index="{{index}}" bindchange="updateReminderTime"><view class="time-value">{{item.time}}</view></picker>
+    </view>
+    <button class="subscribe-button" bindtap="requestReminderPermission">授权微信用餐提醒</button>
+  </view>
+
+  <button class="save-button" bindtap="save" hover-class="primary-pressed">{{isOnboarding ? '创建档案并开始' : '保存当前档案'}}</button>
+  </block>
+  <block wx:else>
+    <view wx:if="{{!profileSummary}}" class="my-guest-card"><view class="my-guest-avatar">食</view><view class="my-guest-copy"><text>登录后管理你的饮食档案</text><text>档案和记录会安全保存到云端</text></view><button class="profile-auth-button" bindtap="authorizeFromProfile" loading="{{authLoading}}" disabled="{{authLoading}}">授权登录</button></view>
+    <view wx:if="{{profileSummary}}" class="my-profile-card">
+      <view class="my-profile-main"><button class="my-avatar-button" bindtap="chooseAvatar" aria-label="上传头像"><image class="my-avatar-image" src="{{avatarUrl || profileSummary.defaultAvatar}}" mode="aspectFill"></image><view class="avatar-camera"><image src="/assets/icons/camera.svg" mode="aspectFit"></image></view></button><view class="my-profile-copy"><text class="my-plan-title">{{profileSummary.nickname}}</text><text class="my-plan-mode">{{profileSummary.modeLabel}} · {{profileSummary.detail}}</text><text class="avatar-hint">点击头像可更换照片</text></view><button wx:if="{{!authUser}}" class="profile-auth-button profile-auth-inline" bindtap="authorizeFromProfile" loading="{{authLoading}}" disabled="{{authLoading}}">授权登录</button><button wx:else class="profile-edit-button" bindtap="editProfile"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><text>编辑档案</text></button></view>
+      <view class="my-metrics">
+        <view><text>{{age}}</text><text>年龄</text></view>
+        <view><text>{{heightCm}}cm</text><text>身高</text></view>
+        <view><text>{{currentWeightKg}}kg</text><text>当前体重</text></view>
+      </view>
+    </view>
+
+    <view wx:if="{{profileSummary}}" class="my-section goal-progress-section">
+      <view class="my-section-head"><view class="my-icon-title"><image src="/assets/icons/target.svg" mode="aspectFit"></image><text>今日目标完成情况</text></view><text class="goal-progress-badge">{{profileSummary.goalProgress}}%</text></view>
+      <view class="goal-progress-main"><text>{{profileSummary.goalProgressText}}</text><text>{{profileSummary.recordedMeals}} 餐已记录</text></view>
+      <view class="goal-progress-track"><view style="width: {{profileSummary.goalProgress}}%"></view></view>
+      <view class="goal-progress-note"><text wx:if="{{!profileSummary.goalNearlyDone}}">记录每一餐，目标会随着今天的进度变得更清楚</text><text wx:else>今天的摄入节奏不错，继续按目标完成剩余餐次</text></view>
+    </view>
+
+    <view wx:if="{{profileSummary}}" class="my-section">
+      <view class="my-section-head"><view class="my-icon-title"><image src="/assets/icons/activity.svg" mode="aspectFit"></image><text>身体与目标</text></view><text>{{profileSummary.genderLabel}}</text></view>
+      <view class="my-target-grid">
+        <view><text>{{profileSummary.targets.dailyKcal}}</text><text>每日千卡</text></view>
+        <view><text>{{profileSummary.targets.protein}}g</text><text>蛋白质目标</text></view>
+        <view><text>{{profileSummary.bmi}}</text><text>{{profileSummary.bmiLabel}}</text></view>
+      </view>
+      <view wx:if="{{profileMode === 'pregnancy'}}" class="my-pregnancy-detail"><text>孕前体重 {{prePregnancyWeightKg}}kg</text><text>{{gestationalDiabetes ? '已标记妊娠糖尿病' : '未标记妊娠糖尿病'}}</text><text>{{pregnancyHypertension ? '已标记妊娠期高血压' : '未标记妊娠期高血压'}}</text></view>
+    </view>
+
+    <view wx:if="{{profileSummary}}" class="my-section history-trend-section">
+      <view class="history-trend-head"><view class="history-title-icon"><image src="/assets/icons/chart-line.svg" mode="aspectFit"></image><view><text>卡路里摄入趋势</text><text>只统计已记录的饮食</text></view></view><view class="history-range"><button data-range="7" bindtap="changeHistoryRange" class="{{historyRange === 7 ? 'active' : ''}}">7天</button><button data-range="14" bindtap="changeHistoryRange" class="{{historyRange === 14 ? 'active' : ''}}">14天</button></view></view>
+      <view class="history-summary"><view><text>{{historyChart.recordedDays ? historyChart.average : '-'}}</text><text>日均千卡</text></view><view><text>{{historyChart.recordedDays ? historyChart.recordedDays : '-'}}</text><text>记录天数</text></view><view><text>{{historyChart.target || '-'}}</text><text>每日目标</text></view></view>
+      <view wx:if="{{historyChart.recordedDays}}" class="history-chart-wrap"><canvas canvas-id="calorieHistory" class="history-canvas" width="{{historyChart.canvasWidth}}" height="180" style="width: {{historyChart.canvasWidth}}px; height: 180px;"></canvas><view class="target-legend"><text></text><text>目标线 {{historyChart.target}} 千卡</text></view></view>
+      <view wx:else class="history-empty"><text>还没有可绘制的记录</text><text>完成一餐记录后，这里会显示真实摄入趋势。</text></view>
+    </view>
+
+    <view wx:if="{{profileSummary}}" class="my-section">
+      <view class="my-section-head"><view class="my-icon-title"><image src="/assets/icons/shield-check.svg" mode="aspectFit"></image><text>饮食设置</text></view><text>{{profileSummary.reminderText}}提醒</text></view>
+      <view class="my-setting-row"><text>过敏原与避忌</text><text>{{profileSummary.allergenText}}</text></view>
+      <view wx:if="{{profileSummary.allergens.length}}" class="my-tags"><text wx:for="{{profileSummary.allergens}}" wx:key="*this">{{item}}</text></view>
+      <view class="my-setting-row"><text>喜欢的菜系</text><text>{{profileSummary.tastes.length}} 种</text></view>
+      <view class="my-tags"><text wx:for="{{profileSummary.tastes}}" wx:key="*this">{{item}}</text></view>
+    </view>
+
+    <text class="my-disclaimer">营养目标为一般估算；孕期、慢病或已有专业方案时，以医生或注册营养师建议为准。</text>
+
+    <view class="data-management-section">
+      <view class="danger-copy"><view class="danger-mark">!</view><view><text>清除所有数据</text><text>删除档案、饮食记录与自定义内容</text></view></view>
+      <button bindtap="clearAllData" hover-class="danger-button-pressed">清除数据</button>
+    </view>
+  </block>
+</view>

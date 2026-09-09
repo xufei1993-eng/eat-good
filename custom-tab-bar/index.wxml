@@ -1,0 +1,19 @@
+<cover-view wx:if="{{!hidden}}" class="tab-shell">
+  <cover-view class="tab-bar">
+    <cover-view class="tab-item {{selected === 0 ? 'active' : ''}}" data-index="0" bindtap="switchTab" aria-label="今日计划">
+      <cover-image class="tab-image" src="/assets/tab-home.png"></cover-image>
+      <cover-view class="tab-label">今日</cover-view>
+      <cover-view class="tab-indicator"></cover-view>
+    </cover-view>
+    <cover-view class="tab-item {{selected === 1 ? 'active' : ''}}" data-index="1" bindtap="switchTab" aria-label="饮食日历">
+      <cover-image class="tab-image" src="/assets/tab-calendar.png"></cover-image>
+      <cover-view class="tab-label">日历</cover-view>
+      <cover-view class="tab-indicator"></cover-view>
+    </cover-view>
+    <cover-view class="tab-item {{selected === 2 ? 'active' : ''}}" data-index="2" bindtap="switchTab" aria-label="我的健康信息">
+      <cover-image class="tab-image" src="/assets/tab-user.png"></cover-image>
+      <cover-view class="tab-label">我的</cover-view>
+      <cover-view class="tab-indicator"></cover-view>
+    </cover-view>
+  </cover-view>
+</cover-view>

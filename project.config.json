@@ -1,0 +1,47 @@
+{
+  "description": "暖早 - 关心她的每日早餐助手",
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "libVersion": "3.6.4",
+  "appid": "wxb746b6deb6577b9d",
+  "projectname": "warm-breakfast",
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "postcss": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      { "type": "file", "value": "assets/.DS_Store" },
+      { "type": "file", "value": "assets/personal/persona-01-孕期营养.png" },
+      { "type": "file", "value": "assets/personal/persona-02-减脂塑形.png" },
+      { "type": "file", "value": "assets/personal/persona-03-日常健康.png" }
+    ],
+    "include": [
+      { "type": "file", "value": "assets/tab-home.png" },
+      { "type": "file", "value": "assets/tab-calendar.png" },
+      { "type": "file", "value": "assets/tab-user.png" }
+    ]
+  },
+  "editorSetting": {}
+}

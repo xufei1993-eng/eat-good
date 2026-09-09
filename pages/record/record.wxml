@@ -1,0 +1,77 @@
+<view class="record-page">
+  <view class="safe-top" style="height: {{headerInset}}px"></view>
+  <view class="record-top"><button bindtap="goBack" aria-label="返回"><image src="/assets/icons/chevron-left.svg" mode="aspectFit"></image></button><text>记录一餐</text><view></view></view>
+  <picker mode="date" value="{{recordDate}}" bindchange="changeDate"><view class="record-date"><text>记录日期</text><text>{{recordDateLabel}} ›</text></view></picker>
+
+  <view class="record-mode-panel">
+    <view class="record-mode-tabs" role="tablist" aria-label="记录方式">
+      <button role="tab" aria-selected="{{recordMode === 'photo'}}" data-mode="photo" bindtap="chooseRecordMode" class="{{recordMode === 'photo' ? 'active' : ''}}"><image src="/assets/icons/camera.svg" mode="aspectFit"></image><text>拍照识别</text></button>
+      <button role="tab" aria-selected="{{recordMode === 'search'}}" data-mode="search" bindtap="chooseRecordMode" class="{{recordMode === 'search' ? 'active' : ''}}"><image src="/assets/icons/search.svg" mode="aspectFit"></image><text>搜索食物</text></button>
+      <button role="tab" aria-selected="{{recordMode === 'plan'}}" data-mode="plan" bindtap="chooseRecordMode" class="{{recordMode === 'plan' ? 'active' : ''}}"><image src="/assets/icons/notebook-tabs.svg" mode="aspectFit"></image><text>计划餐</text></button>
+      <button role="tab" aria-selected="{{recordMode === 'manual'}}" data-mode="manual" bindtap="chooseRecordMode" class="{{recordMode === 'manual' ? 'active' : ''}}"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><text>手工录入</text></button>
+    </view>
+  </view>
+
+  <view wx:if="{{recordMode === 'plan'}}" class="record-mode-content">
+    <button wx:if="{{plannedMeal}}" class="planned-meal" bindtap="usePlannedMeal"><view class="planned-icon">✓</view><view><text>吃的是计划餐</text><text>{{plannedMeal.title}} · {{plannedMeal.kcal}} 千卡</text></view><text>采用</text></button>
+    <view wx:else class="mode-empty"><text>今天还没有可用的计划餐</text><button data-mode="photo" bindtap="chooseRecordMode">改用拍照记录</button></view>
+  </view>
+
+  <view wx:if="{{recordMode === 'photo'}}" class="photo-first-card {{imagePath ? 'has-photo' : ''}}">
+    <view wx:if="{{!imagePath}}" class="photo-first-empty">
+      <view class="photo-first-copy"><view class="photo-first-icon"><image src="/assets/icons/camera.svg" mode="aspectFit"></image></view><view><text>拍下这顿饭</text><text>AI 会识别菜品、份量和营养组成</text></view></view>
+      <view class="photo-stage"><image src="/assets/icons/camera.svg" mode="aspectFit"></image><text>点击拍照或从相册选择</text></view>
+      <button bindtap="choosePhoto">拍照识别</button>
+    </view>
+    <view wx:else class="photo-first-filled">
+      <image class="photo-first-preview" src="{{imagePath}}" mode="aspectFill"></image>
+      <view wx:if="{{analysis && !analyzing}}" class="photo-first-actions"><button bindtap="choosePhoto">重新拍摄</button><button class="remove" bindtap="removePhoto">移除</button></view>
+    </view>
+    <view wx:if="{{analyzing}}" class="vision-status"><view class="vision-spinner"></view><view><text>正在识别这道菜</text><text>通常几秒即可完成</text></view></view>
+    <view wx:if="{{analysisError}}" class="vision-error"><text>图片识别没有完成</text><text>{{analysisError}}</text></view>
+    <view wx:if="{{analysis}}" class="vision-result">
+      <view class="vision-fun-score"><text>{{selectedDish.photoScoreTitle}}</text><view><text>{{selectedDish.photoScore}}</text><text>/ 100</text></view></view>
+      <view class="vision-result-head"><view><text>识别结果</text><text>{{analysis.dishName}}</text></view><view class="vision-result-actions"><text>{{analysis.edited ? '已修改' : (analysis.confidence || '待确认')}}</text><button bindtap="openVisionEdit">编辑</button></view></view>
+      <text class="vision-ingredients">{{selectedDish.foodsText}}</text>
+      <view class="vision-macros"><text>{{estimate.kcal}} 千卡</text><text>蛋白质 {{estimate.protein}}g</text><text>碳水 {{estimate.carbs}}g</text><text>脂肪 {{estimate.fat}}g</text></view>
+      <view class="vision-save-state"><view><text>✓</text><text>{{autoSaveStatus || '正在自动记录'}}</text></view><button wx:if="{{autoSavedLogId}}" bindtap="goToCalendar">去日历</button></view>
+      <text class="vision-nutrients-title">更多营养信息</text>
+      <view class="vision-nutrients"><view wx:for="{{estimate.nutritionDetails}}" wx:key="key"><text>{{item.label}}</text><text>{{item.displayText}}</text></view></view>
+      <view class="vision-advice"><text>{{estimate.adviceTitle}}</text><text>{{estimate.advice}}</text></view>
+      <view class="vision-portion"><text>大约吃了多少</text><view class="portion-options"><button wx:for="{{portions}}" wx:key="value" data-value="{{item.value}}" bindtap="choosePortion" class="{{serving === item.value ? 'selected' : ''}}">{{item.label}}</button></view><label class="portion-grams"><text>或填写实际克数</text><view><input type="digit" value="{{customServingGrams}}" bindinput="updateServingGrams" /><text>g</text></view></label></view>
+      <text class="vision-note">图片营养值为估算结果；特殊疾病或孕期管理请以医生方案为准。</text>
+    </view>
+  </view>
+
+  <view wx:if="{{recordMode === 'search'}}" class="dish-search-card">
+    <view class="search-section-head"><text>或者搜索菜名</text><text>从本地菜品库记录</text></view>
+    <view class="dish-search"><image src="/assets/icons/search.svg" mode="aspectFit"></image><input value="{{searchQuery}}" bindinput="updateSearch" placeholder="输入菜名，例如宫保鸡丁" confirm-type="search" /><button wx:if="{{searchQuery}}" bindtap="clearSearch" aria-label="清空">×</button></view>
+    <scroll-view class="cuisine-filters" scroll-x="true" enhanced="true" show-scrollbar="false"><view data-cuisine="全部" class="cuisine-filter {{cuisineFilter === '全部' ? 'active' : ''}}" bindtap="chooseCuisineFilter">全部</view><view data-cuisine="家常菜" class="cuisine-filter {{cuisineFilter === '家常菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">家常菜</view><view data-cuisine="川菜" class="cuisine-filter {{cuisineFilter === '川菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">川菜</view><view data-cuisine="粤菜" class="cuisine-filter {{cuisineFilter === '粤菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">粤菜</view><view data-cuisine="江浙菜" class="cuisine-filter {{cuisineFilter === '江浙菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">江浙菜</view><view data-cuisine="西北菜" class="cuisine-filter {{cuisineFilter === '西北菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">西北菜</view><view data-cuisine="东北菜" class="cuisine-filter {{cuisineFilter === '东北菜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">东北菜</view><view data-cuisine="日韩料理" class="cuisine-filter {{cuisineFilter === '日韩料理' ? 'active' : ''}}" bindtap="chooseCuisineFilter">日韩料理</view><view data-cuisine="轻食" class="cuisine-filter {{cuisineFilter === '轻食' ? 'active' : ''}}" bindtap="chooseCuisineFilter">轻食</view><view data-cuisine="烧烤" class="cuisine-filter {{cuisineFilter === '烧烤' ? 'active' : ''}}" bindtap="chooseCuisineFilter">烧烤</view><view data-cuisine="粉面" class="cuisine-filter {{cuisineFilter === '粉面' ? 'active' : ''}}" bindtap="chooseCuisineFilter">粉面</view><view data-cuisine="海鲜" class="cuisine-filter {{cuisineFilter === '海鲜' ? 'active' : ''}}" bindtap="chooseCuisineFilter">海鲜</view><view data-cuisine="自助餐" class="cuisine-filter {{cuisineFilter === '自助餐' ? 'active' : ''}}" bindtap="chooseCuisineFilter">自助餐</view></scroll-view>
+    <text class="search-caption">{{hasSearched ? '搜索结果' : '按你的偏好推荐'}}</text>
+    <view wx:if="{{searchResults.length && !hasSearched}}" class="preference-quick-list">
+      <button wx:for="{{searchResults}}" wx:key="id" data-id="{{item.id}}" bindtap="chooseDish"><text>{{item.title}}</text><text>{{item.kcal}} 千卡</text></button>
+    </view>
+    <view wx:elif="{{searchResults.length}}" class="dish-results">
+      <button wx:for="{{searchResults}}" wx:key="id" data-id="{{item.id}}" bindtap="chooseDish" class="dish-result {{selectedDish.id === item.id ? 'selected' : ''}}">
+        <view><text>{{item.title}}</text><text>{{item.foodsText}}</text><text>{{item.cuisine}} · {{item.slotLabel}} · {{item.kcal}} 千卡</text></view><view>{{selectedDish.id === item.id ? '✓' : '›'}}</view>
+      </button>
+    </view>
+    <view wx:elif="{{hasSearched}}" class="dish-empty"><text>本地菜品库暂时没找到</text><text>可以缩短菜名重试，或录入包装营养值</text></view>
+  </view>
+
+  <view wx:if="{{selectedDish && !analysis && (recordMode === 'search' || recordMode === 'plan')}}" class="selected-dish-card">
+    <view class="selected-dish-head"><view><text>已选择</text><text>{{selectedDish.title}}</text></view><text>{{selectedDish.cuisine}}</text></view>
+    <text class="dish-composition">{{selectedDish.foodsText}}</text>
+    <view class="portion-label-row"><text>大约吃了多少</text><text>{{estimate.kcal}} 千卡</text></view>
+    <view class="portion-options"><button wx:for="{{portions}}" wx:key="value" data-value="{{item.value}}" bindtap="choosePortion" class="{{serving === item.value ? 'selected' : ''}}">{{item.label}}</button></view><label class="portion-grams"><text>{{selectedMeasureUnit === 'ml' ? '或填写实际毫升数' : '或填写实际克数'}}</text><view><input type="digit" value="{{customServingGrams}}" bindinput="updateServingGrams" /><text>{{selectedMeasureUnit}}</text></view></label>
+  </view>
+
+  <view wx:if="{{estimate && !analysis && (recordMode === 'search' || recordMode === 'plan')}}" class="estimate-card"><view class="estimate-head"><text>本餐营养估算</text><text>可确认后记录</text></view><view class="estimate-grid"><view><text>{{estimate.kcal}}</text><text>千卡</text></view><view><text>{{estimate.protein}}g</text><text>蛋白质</text></view><view><text>{{estimate.carbs}}g</text><text>碳水</text></view><view><text>{{estimate.fat}}g</text><text>脂肪</text></view></view><text class="estimate-note">按本地标准菜谱与所选份量估算，实际用油和调味会造成差异。</text></view>
+
+  <view wx:if="{{recordMode === 'manual'}}" class="record-extras"><button bindtap="openCustomFood"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><view><text>手工录入</text><text>自行填写食物和营养值</text></view><text>›</text></button></view>
+  <button wx:if="{{!analysis && recordMode !== 'photo'}}" class="save-button" bindtap="saveLog" disabled="{{!estimate}}">确认并记录</button>
+
+  <view wx:if="{{showVisionEdit}}" class="custom-food-mask" catchtap="closeVisionEdit"><view class="custom-food-dialog" catchtap="noop"><view class="custom-food-head"><view><text>修改识别结果</text><text>按照片中的实际餐食核对</text></view><button bindtap="closeVisionEdit">×</button></view><view class="custom-field"><text>菜品名称</text><input value="{{visionEditForm.title}}" data-field="title" bindinput="updateVisionEditField" placeholder="请输入菜品名称" /></view><view class="custom-field"><text>主要食材与份量</text><input value="{{visionEditForm.foodsText}}" data-field="foodsText" bindinput="updateVisionEditField" placeholder="例如：米饭 150g · 鸡肉 100g" /></view><text class="per100-title">本餐营养估算</text><view class="custom-nutrients"><view><text>热量</text><input type="digit" value="{{visionEditForm.kcal}}" data-field="kcal" bindinput="updateVisionEditField" /><text>千卡</text></view><view><text>蛋白质</text><input type="digit" value="{{visionEditForm.protein}}" data-field="protein" bindinput="updateVisionEditField" /><text>g</text></view><view><text>碳水</text><input type="digit" value="{{visionEditForm.carbs}}" data-field="carbs" bindinput="updateVisionEditField" /><text>g</text></view><view><text>脂肪</text><input type="digit" value="{{visionEditForm.fat}}" data-field="fat" bindinput="updateVisionEditField" /><text>g</text></view><view><text>膳食纤维</text><input type="digit" value="{{visionEditForm.fiber}}" data-field="fiber" bindinput="updateVisionEditField" /><text>g</text></view></view><button class="custom-food-save" bindtap="saveVisionEdit">保存修改</button></view></view>
+
+  <view wx:if="{{showCustomFood}}" class="custom-food-mask" catchtap="closeCustomFood"><view class="custom-food-dialog" catchtap="noop"><view class="custom-food-head"><view><text>手工录入</text><text>输入菜名后优先从菜品库带出营养</text></view><button bindtap="closeCustomFood">×</button></view><view class="custom-field"><text>食物名称</text><input value="{{customFoodForm.title}}" data-field="title" bindinput="updateCustomFoodField" placeholder="例如：青菜或咖啡" /></view><view class="custom-field"><text>{{customFoodForm.measureUnit === 'ml' ? '本次实际容量' : '本次实际重量'}}</text><view><input type="digit" value="{{customFoodForm.grams}}" data-field="grams" bindinput="updateCustomFoodField" placeholder="{{customFoodForm.measureUnit === 'ml' ? '300' : '100'}}" /><view class="custom-unit-switch"><button data-unit="g" class="{{customFoodForm.measureUnit === 'g' ? 'active' : ''}}" catchtap="chooseCustomFoodUnit">g</button><button data-unit="ml" class="{{customFoodForm.measureUnit === 'ml' ? 'active' : ''}}" catchtap="chooseCustomFoodUnit">ml</button></view></view></view><text class="per100-title">每 100{{customFoodForm.measureUnit}} 营养值{{customFoodForm.matched ? ' · 已从库中带出' : ''}}</text><view class="custom-nutrients"><view><text>热量</text><input type="digit" value="{{customFoodForm.kcal}}" data-field="kcal" bindinput="updateCustomFoodField" placeholder="自动带出" /><text>千卡</text></view><view><text>蛋白质</text><input type="digit" value="{{customFoodForm.protein}}" data-field="protein" bindinput="updateCustomFoodField" placeholder="0" /><text>g</text></view><view><text>碳水</text><input type="digit" value="{{customFoodForm.carbs}}" data-field="carbs" bindinput="updateCustomFoodField" placeholder="0" /><text>g</text></view><view><text>脂肪</text><input type="digit" value="{{customFoodForm.fat}}" data-field="fat" bindinput="updateCustomFoodField" placeholder="0" /><text>g</text></view><view><text>膳食纤维</text><input type="digit" value="{{customFoodForm.fiber}}" data-field="fiber" bindinput="updateCustomFoodField" placeholder="0" /><text>g</text></view></view><view class="formula-note">按每 100{{customFoodForm.measureUnit}}营养值 × 本次份量计算；饮用水可填写 0 千卡</view><button class="custom-food-save" bindtap="saveCustomFood">计算并采用</button></view></view>
+</view>

@@ -1,0 +1,9 @@
+<view class="login-page">
+  <view class="login-brand"><view class="brand-mark">食</view><text>吃对饭</text></view>
+  <text class="login-title">先登录，再开始记录</text>
+  <text class="login-subtitle">使用微信授权登录，你的饮食档案和记录会安全保存到云端。</text>
+  <view class="login-notice"><text class="notice-title">授权说明</text><text>点击下方按钮后，我们会获取你的微信身份用于登录，并保存你主动填写的昵称。除实现登录和提供服务外，不会用于其他用途。</text></view>
+  <view class="agreement" bindtap="toggleAgreement"><checkbox value="agree" checked="{{agreed}}" /><text>我已阅读并同意隐私说明，了解微信身份信息将用于本小程序登录。</text></view>
+  <button class="login-button" bindtap="authorizeLogin" loading="{{loading}}" disabled="{{loading}}">微信授权登录</button>
+  <text class="login-footnote">你可以随时在设置中清除账号数据。</text>
+</view>

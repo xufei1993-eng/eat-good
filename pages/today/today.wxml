@@ -1,0 +1,123 @@
+<page-meta page-style="{{showRecordSheet ? 'overflow: hidden;' : ''}}"></page-meta>
+<view class="today-page variant-{{uiVariant}}">
+  <view class="safe-top" style="height: {{headerInset}}px"></view>
+  <view class="today-head"><view class="today-identity"><button class="profile-avatar" bindtap="openProfile" aria-label="打开{{profileLabel}}档案"><image wx:if="{{profileAvatarUrl}}" src="{{profileAvatarUrl}}" mode="aspectFill"></image><text wx:else>{{profileMark}}</text></button><view class="today-identity-copy"><view class="today-meta"><text class="today-date">{{dateText}}</text><text class="today-plan-label">· 今日计划</text><text class="today-greeting">· {{greeting}}</text></view></view></view></view>
+
+  <view class="goal-card {{isOverTarget ? 'over-target' : ''}}">
+    <view class="goal-overview-head">
+      <view class="goal-balance"><text>{{isOverTarget ? '今天已超过目标' : '今天还可以吃'}}</text><view><text>{{remainingKcal}}</text><text>千卡</text></view></view>
+      <text>{{dateText}}</text>
+    </view>
+    <view class="goal-ring-stage">
+      <view class="energy-ring"><view class="energy-ring-fill" style="{{energyRingStyle}}"><view></view></view></view>
+      <text class="companion-prompt">{{isOverTarget ? '怎么吃多了？' : '记录一餐，我来帮你算'}}</text>
+      <image class="goal-companion {{isOverTarget ? 'over-target-companion' : ''}}" src="/assets/illustrations/cabbage-buddy-handdrawn.png" mode="aspectFit" aria-label="手绘大白菜营养助手"></image>
+      <view class="ring-stat ring-stat-left"><text>已摄入</text><text>{{consumed.kcal || 0}} 千卡</text></view>
+      <view class="ring-stat ring-stat-right"><text>今日目标</text><text>{{plan.targets.kcal}} 千卡</text></view>
+    </view>
+    <view class="goal-macros">
+      <view><text>碳水</text><text>{{consumed.carbs || 0}}/{{targetMacros.carbs}}g</text><view class="macro-mini-track"><view style="width: {{macroProgress.carbs}}%"></view></view></view>
+      <view><text>蛋白质</text><text>{{consumed.protein || 0}}/{{targetMacros.protein}}g</text><view class="macro-mini-track"><view style="width: {{macroProgress.protein}}%"></view></view></view>
+      <view><text>脂肪</text><text>{{consumed.fat || 0}}/{{targetMacros.fat}}g</text><view class="macro-mini-track"><view style="width: {{macroProgress.fat}}%"></view></view></view>
+    </view>
+  </view>
+  <view wx:if="{{logs.length}}" class="section-head"><text>今日记录</text></view>
+  <view wx:for="{{logs}}" wx:key="id" class="meal-row">
+    <view class="meal-time"><text>{{item.kcal}}</text><text>千卡</text></view>
+    <view class="meal-content"><text class="meal-name">{{item.title}}</text><text class="meal-foods">蛋白质 {{item.protein}}g · 碳水 {{item.carbs}}g · 脂肪 {{item.fat}}g</text></view><view class="meal-actions"><button data-id="{{item.id}}" catchtap="editTodayLog" aria-label="编辑记录"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image></button><button data-id="{{item.id}}" catchtap="deleteTodayLog" aria-label="删除记录"><image src="/assets/icons/trash-2.svg" mode="aspectFit"></image></button></view>
+  </view>
+  <view wx:if="{{mealFriend}}" class="meal-friend {{mealFriend.tone}}">
+    <view class="meal-friend-head">
+      <view class="friend-avatar"><image src="/assets/icons/message-circle-heart.svg" mode="aspectFit"></image></view>
+      <view class="friend-name"><text>饭友说</text><text>{{mealFriend.context}}</text></view>
+      <text class="friend-badge">{{mealFriend.badge}}</text>
+    </view>
+    <text class="meal-friend-title">{{mealFriend.title}}</text>
+    <text class="meal-friend-message">{{mealFriend.message}}</text>
+    <view class="meal-friend-next"><text class="next-arrow">→</text><text>{{mealFriend.action}}</text></view>
+  </view>
+  <view class="recommend-head"><view class="recommend-title-group"><image src="/assets/icons/notebook-tabs.svg" mode="aspectFit"></image><view><text>今日推荐</text><text>根据档案与当前目标生成</text></view></view><button bindtap="swapActiveMeal"><image src="/assets/icons/rotate-ccw.svg" mode="aspectFit"></image>换一个</button></view>
+  <view class="meal-tabs" role="tablist" aria-label="选择推荐餐次">
+    <button role="tab" aria-selected="{{activeSlot === 'breakfast'}}" data-slot="breakfast" bindtap="chooseMealSlot" class="{{activeSlot === 'breakfast' ? 'active' : ''}}"><text></text>早餐</button>
+    <button role="tab" aria-selected="{{activeSlot === 'lunch'}}" data-slot="lunch" bindtap="chooseMealSlot" class="{{activeSlot === 'lunch' ? 'active' : ''}}"><text></text>午餐</button>
+    <button role="tab" aria-selected="{{activeSlot === 'dinner'}}" data-slot="dinner" bindtap="chooseMealSlot" class="{{activeSlot === 'dinner' ? 'active' : ''}}"><text></text>晚餐</button>
+  </view>
+  <view wx:if="{{activeMeal}}" class="recommend-card">
+    <view class="meal-visual {{activeSlot}}" aria-label="{{activeMeal.title}}">
+      <view class="visual-orbit orbit-one"></view><view class="visual-orbit orbit-two"></view>
+      <view class="visual-kicker"><text>{{activeMeal.label}}</text><text>{{activeMeal.kcal}} 千卡</text></view>
+      <image wx:if="{{activeMeal.imageUrl}}" class="meal-cover" src="{{activeMeal.imageUrl}}" mode="aspectFill"></image>
+      <view wx:else class="dish-stage"><view class="dish-shadow"></view><view class="dish-plate"><text>{{activeMeal.visualEmoji}}</text></view><view class="dish-spark spark-one">✦</view><view class="dish-spark spark-two">✦</view></view>
+      <view class="visual-caption"><text>{{activeMeal.title}}</text><text>{{activeMeal.foodCount}} 种食材 · 按档案搭配</text></view>
+    </view>
+    <view class="recommend-body">
+      <text class="recommend-title">{{activeMeal.title}}</text>
+      <text class="recommend-summary">{{activeMeal.kcal}} 千卡 · {{activeMeal.foodCount}} 种食材 · {{activeTaste || profileLabel}}</text>
+      <view class="recommend-tags"><view><b>{{activeMeal.protein}}g</b><text>蛋白质</text></view><view><b>{{activeMeal.fiber}}g</b><text>膳食纤维</text></view><view><b>{{activeMeal.fat}}g</b><text>脂肪</text></view></view>
+      <view class="recommend-foods"><text>餐盘组成</text><text>{{activeMeal.foodsText}}</text></view>
+      <view class="recommend-reason"><text>为什么这样搭</text><text>{{activeMeal.recommendationReason}}</text></view>
+      <button class="recipe-open {{activeMeal.recipe.available ? '' : 'is-disabled'}}" bindtap="openRecipe"><text>{{activeMeal.recipe.available ? '查看菜谱' : '菜谱整理中'}}</text><text>{{activeMeal.recipe.available ? activeMeal.recipe.steps.length + ' 个步骤' : '暂未收录'}}</text><text>›</text></button>
+      <button data-slot="{{activeMeal.slot}}" bindtap="recordMeal" class="recommend-record {{activeMeal.recorded ? 'recorded' : ''}}"><text class="record-icon">{{activeMeal.recorded ? '✓' : '＋'}}</text><text>{{activeMeal.recorded ? '已记录' : '吃了这份'}}</text></button>
+    </view>
+  </view>
+  <text class="estimate-note">营养数据按常见可食份量估算，实际以称重和包装标签为准。</text>
+  <view wx:if="{{showCuisineManager}}" class="cuisine-mask" catchtap="closeCuisineManager"><view class="cuisine-dialog" catchtap="noop"><view class="cuisine-dialog-head"><view><text>管理菜系偏好</text><text>点击添加或移除，最多 10 种</text></view><button bindtap="closeCuisineManager">×</button></view><view class="cuisine-grid"><button wx:for="{{cuisineOptions}}" wx:key="label" data-index="{{index}}" bindtap="toggleCuisine" class="cuisine-option {{item.checked ? 'selected' : ''}}"><text class="cuisine-emoji">{{item.emoji}}</text><text>{{item.label}}</text><text>{{item.checked ? '✓' : '+'}}</text></button></view><button class="cuisine-save" bindtap="saveCuisinePreferences">完成 · {{selectedCuisineCount}} / 10</button></view></view>
+  <view wx:if="{{showRecipe}}" class="recipe-mask" catchtap="closeRecipe"><view class="recipe-sheet" catchtap="noop"><view class="recipe-sheet-head"><view><text>{{recipe.title}}</text><text>用料与做法</text></view><button bindtap="closeRecipe">×</button></view><view class="recipe-section"><text>用料</text><view class="recipe-ingredients"><text wx:for="{{recipe.ingredients}}" wx:key="*this">{{item}}</text></view></view><view class="recipe-section"><text>做法</text><view class="recipe-steps"><view wx:for="{{recipe.steps}}" wx:key="*this"><text>{{index + 1}}</text><text>{{item}}</text></view></view></view><text wx:if="{{recipe.note}}" class="recipe-note">小贴士：{{recipe.note}}</text></view></view>
+  <button class="record-fab" bindtap="openRecordSheet" aria-label="拍照或添加一餐"><image class="record-camera-main" src="/assets/icons/camera.svg" mode="aspectFit"></image></button>
+  <view wx:if="{{showRecordSheet}}" class="record-sheet-mask" catchtap="closeRecordSheet" catchtouchmove="noop">
+    <view class="record-sheet {{sheetVisionEstimate ? 'is-expanded' : ''}}" catchtap="noop">
+      <view class="record-sheet-handle"></view>
+      <view class="record-sheet-head"><view><text>记下这一餐</text><text>直接在这里完成记录</text></view><button bindtap="closeRecordSheet" aria-label="关闭">×</button></view>
+      <picker mode="date" value="{{sheetRecordDate}}" end="{{sheetRecordDateMax}}" bindchange="changeSheetRecordDate"><view class="sheet-record-date"><view><image src="/assets/icons/calendar-days.svg" mode="aspectFit"></image><text>记录日期</text></view><text>{{sheetRecordDateLabel}} ›</text></view></picker>
+      <view class="sheet-mode-tabs" role="tablist" aria-label="记录方式">
+
+
+        <button role="tab" aria-selected="{{sheetMode === 'photo'}}" data-mode="photo" bindtap="chooseRecordMode" class="{{sheetMode === 'photo' ? 'active' : ''}}"><image src="/assets/icons/camera.svg" mode="aspectFit"></image><text>拍照</text></button>
+  
+        <button role="tab" aria-selected="{{sheetMode === 'manual'}}" data-mode="manual" bindtap="chooseRecordMode" class="{{sheetMode === 'manual' ? 'active' : ''}}"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><text>手工</text></button>
+
+        <button role="tab" aria-selected="{{sheetMode === 'search'}}" data-mode="search" bindtap="chooseRecordMode" class="{{sheetMode === 'search' ? 'active' : ''}}"><image src="/assets/icons/search.svg" mode="aspectFit"></image><text>搜索</text></button>
+
+        
+       
+      </view>
+      <scroll-view class="sheet-workspace" scroll-y="{{true}}" enhanced="{{true}}" show-scrollbar="{{false}}">
+        <view wx:if="{{sheetMode === 'search'}}" class="sheet-search-pane">
+          <view class="sheet-search"><image src="/assets/icons/search.svg" mode="aspectFit"></image><input value="{{sheetQuery}}" bindinput="updateSheetSearch" placeholder="搜索菜名或食物" confirm-type="search" /><button wx:if="{{sheetQuery}}" bindtap="clearSheetSearch" aria-label="清空">×</button></view>
+          <scroll-view class="sheet-cuisine-filters" scroll-y="true" enhanced="true" bounces="true" show-scrollbar="false"><view wx:for="{{['全部','家常菜','川菜','粤菜','江浙菜','西北菜','东北菜','日韩料理','轻食','烧烤','粉面','海鲜','自助餐']}}" wx:key="*this" data-tag="{{item}}" class="sheet-cuisine-filter {{sheetTag === item ? 'active' : ''}}" bindtap="chooseSheetTag">{{item}}</view></scroll-view>
+          <text class="sheet-section-label">{{sheetQuery ? '搜索结果' : '最近常用'}}</text>
+          <view wx:if="{{sheetSelectedDish}}" class="sheet-selected-dish"><view class="sheet-selected-head"><view><text>{{sheetSelectedDish.title}}</text><text>{{sheetSelectedDish.foodsText}}</text></view><button bindtap="clearSheetSelectedDish">换一个</button></view><label class="sheet-grams-field"><text>{{sheetSearchUnit === 'ml' ? '实际喝了' : '实际吃了'}}</text><view><input type="digit" value="{{sheetSearchGrams}}" bindinput="updateSheetSearchGrams" /><text>{{sheetSearchUnit}}</text></view></label><view class="sheet-selected-macros"><text>{{sheetSearchEstimate.kcal}} 千卡</text><text>蛋白质 {{sheetSearchEstimate.protein}}g</text><text>碳水 {{sheetSearchEstimate.carbs}}g</text><text>脂肪 {{sheetSearchEstimate.fat}}g</text></view><button class="sheet-primary" bindtap="confirmSheetDish">记录这餐</button></view>
+          <view wx:elif="{{sheetLoading}}" class="sheet-catalog-loading"><view class="sheet-loading-spinner"></view><text>正在加载菜品</text><view class="sheet-loading-track"><view></view></view></view>
+          <view wx:elif="{{sheetResults.length}}" class="sheet-dish-list"><button wx:for="{{sheetResults}}" wx:key="id" data-id="{{item.id}}" bindtap="saveSheetDish"><view><text>{{item.title}}</text><text>{{item.foodsText}}</text></view><view><text>{{item.kcal}}</text><text>千卡</text></view><text>＋</text></button></view>
+          <view wx:else="{{true}}" class="sheet-empty"><text>没有找到这个菜名</text><text>可以换个关键词，或切到手工录入</text></view>
+        </view>
+        <view wx:if="{{sheetMode === 'photo'}}" class="sheet-photo-pane">
+          <view wx:if="{{!sheetPhotoPath}}" class="sheet-photo-visual"><view><image src="/assets/icons/camera.svg" mode="aspectFit"></image><image src="/assets/icons/pencil.svg" mode="aspectFit"></image></view><text>拍下餐盘，识别菜品和营养</text><text>也可以从相册选择已有照片</text></view>
+          <button wx:if="{{!sheetPhotoPath}}" class="sheet-primary" bindtap="chooseSheetPhoto">拍照或选择照片</button>
+          <view wx:else="{{true}}" class="sheet-photo-result">
+            <view class="sheet-photo-preview"><image src="{{sheetPhotoPath}}" mode="aspectFill"></image><button bindtap="chooseSheetPhoto">重新选择</button></view>
+            <view wx:if="{{sheetAnalyzing}}" class="sheet-analyzing"><view></view><text>正在识别菜品和营养</text><text>请稍候，通常几秒即可完成</text></view>
+            <view wx:if="{{sheetVisionEstimate && !sheetAnalyzing}}" class="sheet-vision-card"><view class="sheet-fun-score"><text>{{sheetVisionEstimate.scoreTitle}}</text><view><text>{{sheetVisionEstimate.score}}</text><text>/ 100</text></view></view>
+              <view class="sheet-vision-head"><view><text>识别结果</text><text>{{sheetVisionEstimate.title}}</text></view><view class="sheet-vision-actions"><text>{{sheetVisionEstimate.confidence || '待确认'}}</text><button bindtap="editSheetVision">编辑</button></view></view>
+              <text class="sheet-vision-foods">{{sheetVisionEstimate.unit}}</text>
+              <view class="sheet-vision-macros"><view><text>{{sheetVisionEstimate.kcal}}</text><text>千卡</text></view><view><text>{{sheetVisionEstimate.protein}}g</text><text>蛋白质</text></view><view><text>{{sheetVisionEstimate.carbs}}g</text><text>碳水</text></view><view><text>{{sheetVisionEstimate.fat}}g</text><text>脂肪</text></view></view>
+              <text class="sheet-auto-saved">{{sheetSaveStatus || '当前餐食已自动记录'}} · 可在日历中查看</text>
+              <view wx:if="{{sheetVisionEstimate.nutritionDetails.length}}" class="sheet-nutrients"><button class="sheet-nutrients-toggle" bindtap="toggleSheetNutrients"><text>更多营养信息</text><text>{{sheetNutrientsExpanded ? '收起' : '展开'}}</text><text class="{{sheetNutrientsExpanded ? 'expanded' : ''}}">⌄</text></button><view wx:if="{{sheetNutrientsExpanded}}"><view wx:for="{{sheetVisionEstimate.nutritionDetails}}" wx:key="key"><text>{{item.label}}</text><text>{{item.displayText}}</text></view></view></view>
+              <view wx:if="{{sheetVisionEstimate.advice}}" class="sheet-advice"><text>{{sheetVisionEstimate.adviceTitle}}</text><text>{{sheetVisionEstimate.advice}}</text></view>
+              <view class="sheet-portion"><text>大约吃了多少</text><view><button data-value="0.5" bindtap="chooseSheetPortion" class="{{sheetServing === 0.5 ? 'active' : ''}}">半份</button><button data-value="1" bindtap="chooseSheetPortion" class="{{sheetServing === 1 ? 'active' : ''}}">标准份</button><button data-value="1.5" bindtap="chooseSheetPortion" class="{{sheetServing === 1.5 ? 'active' : ''}}">加量</button></view><label class="sheet-grams-field"><text>或填写实际克数</text><view><input type="digit" value="{{sheetCustomGrams}}" bindinput="updateSheetCustomGrams" /><text>g</text></view></label><text wx:if="{{sheetSaveStatus}}" class="sheet-grams-saved">✓ {{sheetSaveStatus}}</text></view>
+            </view>
+          </view>
+          <view wx:if="{{sheetError}}" class="sheet-error"><text>{{sheetError}}</text><button data-mode="search" bindtap="chooseRecordMode">改用搜索</button></view>
+        </view>
+        <view wx:if="{{sheetMode === 'manual'}}" class="sheet-manual-pane">
+          <label class="sheet-field sheet-field-wide"><text>食物名称</text><input value="{{sheetManual.title}}" bindinput="updateSheetManualTitle" placeholder="输入菜名可自动带出营养" /></label>
+          <label class="sheet-field sheet-field-wide sheet-manual-grams"><text>{{sheetManual.measureUnit === 'ml' ? '实际喝了多少' : '实际吃了多少'}}</text><view><input type="digit" value="{{sheetManual.grams}}" bindinput="updateSheetManualGrams" placeholder="{{sheetManual.measureUnit === 'ml' ? '300' : '100'}}" /><view class="sheet-unit-switch"><button type="button" data-unit="g" class="{{sheetManual.measureUnit === 'g' ? 'active' : ''}}" catchtap="chooseSheetManualUnit">g</button><button type="button" data-unit="ml" class="{{sheetManual.measureUnit === 'ml' ? 'active' : ''}}" catchtap="chooseSheetManualUnit">ml</button></view></view></label>
+          <text wx:if="{{sheetManual.matched}}" class="sheet-autofill-note">已按每 100{{sheetManual.measureUnit}}营养值自动计算，可继续修改</text>
+          <label class="sheet-field sheet-manual-kcal"><text>热量</text><view><input type="digit" value="{{sheetManual.kcal}}" data-field="kcal" bindinput="updateSheetManual" placeholder="自动带出或手动填写" /><text>千卡</text></view></label><button class="sheet-manual-toggle" bindtap="toggleSheetManualDetails"><text>补充营养信息</text><text>{{sheetManualDetailsExpanded ? '收起' : '选填'}}</text></button><view wx:if="{{sheetManualDetailsExpanded}}" class="sheet-number-grid"><label class="sheet-field"><text>蛋白质</text><view><input type="digit" value="{{sheetManual.protein}}" data-field="protein" bindinput="updateSheetManual" placeholder="0" /><text>g</text></view></label><label class="sheet-field"><text>碳水</text><view><input type="digit" value="{{sheetManual.carbs}}" data-field="carbs" bindinput="updateSheetManual" placeholder="0" /><text>g</text></view></label><label class="sheet-field"><text>脂肪</text><view><input type="digit" value="{{sheetManual.fat}}" data-field="fat" bindinput="updateSheetManual" placeholder="0" /><text>g</text></view></label></view>
+          <button class="sheet-primary" bindtap="saveSheetManual">保存这餐</button>
+        </view>
+      </scroll-view>
+      <view wx:if="{{showSheetVisionEdit}}" class="sheet-edit-mask" catchtap="closeSheetVisionEdit"><view class="sheet-edit-dialog" catchtap="noop"><view class="sheet-edit-head"><view><text>编辑识别结果</text><text>修改后会更新已自动保存的记录</text></view><button bindtap="closeSheetVisionEdit">×</button></view><label class="sheet-field"><text>菜品名称</text><input value="{{sheetManual.title}}" data-field="title" bindinput="updateSheetManual" /></label><view class="sheet-number-grid"><label class="sheet-field"><text>热量</text><view><input type="digit" value="{{sheetManual.kcal}}" data-field="kcal" bindinput="updateSheetManual" /><text>千卡</text></view></label><label class="sheet-field"><text>蛋白质</text><view><input type="digit" value="{{sheetManual.protein}}" data-field="protein" bindinput="updateSheetManual" /><text>g</text></view></label><label class="sheet-field"><text>碳水</text><view><input type="digit" value="{{sheetManual.carbs}}" data-field="carbs" bindinput="updateSheetManual" /><text>g</text></view></label><label class="sheet-field"><text>脂肪</text><view><input type="digit" value="{{sheetManual.fat}}" data-field="fat" bindinput="updateSheetManual" /><text>g</text></view></label></view><button class="sheet-primary" bindtap="saveSheetManual">保存修改</button></view></view>
+    </view>
+  </view>
+</view>

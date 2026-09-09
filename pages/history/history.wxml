@@ -1,0 +1,47 @@
+<page-meta page-style="{{showLogEdit || showLogDetail ? 'overflow: hidden;' : ''}}"></page-meta>
+<view class="history-page">
+  <view class="safe-top" style="height: {{headerInset}}px"></view>
+ 
+  <view class="month-summary"><view class="summary-item"><image src="/assets/icons/activity.svg" mode="aspectFit"></image><view><text>{{monthTotals.kcal || 0}}</text><text>本月已记录千卡</text></view></view><view class="summary-item"><image src="/assets/icons/notebook-tabs.svg" mode="aspectFit"></image><view><text>{{monthTotals.count || 0}}</text><text>记录餐次</text></view></view></view>
+  <view class="calendar-card">
+    <view class="calendar-nav"><button data-delta="-1" bindtap="changeMonth" aria-label="上个月"><image src="/assets/icons/chevron-left.svg" mode="aspectFit"></image></button><text>{{monthText}}</text><button data-delta="1" bindtap="changeMonth" aria-label="下个月"><image src="/assets/icons/chevron-right.svg" mode="aspectFit"></image></button></view>
+    <view class="weekday-row"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
+    <view class="calendar-grid">
+      <button wx:for="{{calendar}}" wx:key="key" disabled="{{item.empty}}" data-date="{{item.date}}" bindtap="selectDay" class="day-cell {{item.selected ? 'selected' : ''}} {{item.isToday ? 'today' : ''}} {{item.count ? 'has-log' : ''}}">
+        <text wx:if="{{!item.empty}}" class="day-number">{{item.day}}</text>
+        <text wx:if="{{item.count}}" class="day-kcal">{{item.kcal}}k</text>
+      </button>
+    </view>
+  </view>
+  <view class="selected-head"><view><text>{{selectedLabel}}</text><text>{{selectedLogs.length ? '已记录 ' + selectedLogs.length + ' 餐' : '还没有饮食记录'}}</text></view><text>{{selectedTotals.kcal || 0}} 千卡</text></view>
+  <view wx:if="{{selectedLogs.length}}" class="daily-macros"><view><text>{{selectedTotals.protein}}g</text><text>蛋白质</text></view><view><text>{{selectedTotals.carbs}}g</text><text>碳水</text></view><view><text>{{selectedTotals.fat}}g</text><text>脂肪</text></view></view>
+  <view wx:for="{{selectedLogs}}" wx:key="id" class="log-row" data-id="{{item.id}}" bindtap="openLogDetail" aria-label="查看{{item.title}}详情"><image wx:if="{{item.displayImageUrl}}" src="{{item.displayImageUrl}}" mode="aspectFill" /><view wx:else class="food-placeholder"><image src="/assets/icons/utensils.svg" mode="aspectFit"></image></view><view class="log-copy"><view class="log-title-line"><text>{{item.title}}</text><text class="log-source {{item.isVision ? 'vision' : ''}}">{{item.sourceLabel}}</text></view><text>{{item.unit}} · 蛋白质 {{item.protein}}g</text></view><text class="log-kcal">{{item.kcal}} 千卡</text><view class="log-actions"><button class="edit-log" data-id="{{item.id}}" catchtap="openLogEdit" aria-label="编辑这条记录"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image></button><button class="delete-log" data-id="{{item.id}}" catchtap="deleteLog" aria-label="删除这条记录"><image src="/assets/icons/trash-2.svg" mode="aspectFit"></image></button></view></view>
+  <view wx:if="{{!selectedLogs.length}}" class="empty-state"><image class="empty-food-image" src="/assets/meals/cuisine-light.jpg" mode="aspectFill"></image><text>这一天还没有记录</text><text>拍照或选择食物份量，营养进度会自动汇总。</text><button data-date="{{selectedDate}}" bindtap="addRecord"><image src="/assets/icons/camera.svg" mode="aspectFit"></image>记录一餐</button></view>
+</view>
+<view wx:if="{{showLogEdit}}" class="edit-mask" bindtap="closeLogEdit" catchtouchmove="noop"><view class="edit-dialog" catchtap="noop"><view class="edit-head"><view><text>编辑餐食</text><text>{{selectedLabel}}</text></view><button bindtap="closeLogEdit">×</button></view><view class="edit-field"><text>菜品名称</text><input value="{{editLogForm.title}}" data-field="title" bindinput="updateLogField" /></view><view class="edit-field"><text>食材与份量</text><input value="{{editLogForm.unit}}" data-field="unit" bindinput="updateLogField" /></view><view class="edit-nutrients"><view><text>热量</text><input type="digit" value="{{editLogForm.kcal}}" data-field="kcal" bindinput="updateLogField" /><text>千卡</text></view><view><text>蛋白质</text><input type="digit" value="{{editLogForm.protein}}" data-field="protein" bindinput="updateLogField" /><text>g</text></view><view><text>碳水</text><input type="digit" value="{{editLogForm.carbs}}" data-field="carbs" bindinput="updateLogField" /><text>g</text></view><view><text>脂肪</text><input type="digit" value="{{editLogForm.fat}}" data-field="fat" bindinput="updateLogField" /><text>g</text></view><view><text>膳食纤维</text><input type="digit" value="{{editLogForm.fiber}}" data-field="fiber" bindinput="updateLogField" /><text>g</text></view></view><button class="edit-save" bindtap="saveLogEdit">保存修改</button></view></view>
+<view wx:if="{{showLogDetail}}" class="detail-mask" bindtap="closeLogDetail" catchtouchmove="noop">
+  <view class="detail-sheet" catchtap="noop">
+    <view class="detail-handle"></view>
+    <view class="detail-head"><view><text>餐食详情</text><text>{{selectedLabel}}</text></view><button bindtap="closeLogDetail" aria-label="关闭">×</button></view>
+    <view wx:if="{{detailLog.displayImageUrl}}" class="detail-photo-wrap"><image class="detail-photo" src="{{detailLog.displayImageUrl}}" mode="aspectFill"></image><text>{{detailLog.imageSourceLabel}}</text></view>
+    <view class="detail-source-row"><text class="detail-source {{detailLog.isVision ? 'vision' : 'catalog'}}">{{detailLog.sourceLabel}}</text><text wx:if="{{detailLog.isVision && detailLog.confidenceLabel}}">识别置信度：{{detailLog.confidenceLabel}}</text><text wx:if="{{detailLog.recognitionEdited}}">已人工修正</text></view>
+    <text class="detail-title">{{detailLog.title}}</text>
+    <text class="detail-foods">{{detailLog.unit || '未填写食材与份量'}}</text>
+    <view wx:if="{{detailLog.isVision && detailLog.actualGramsText}}" class="detail-serving"><text>本次实际份量</text><text>{{detailLog.actualGramsText}}</text></view>
+    <view wx:if="{{!detailLog.isVision && detailLog.actualAmountText}}" class="detail-serving"><text>本次实际份量</text><text>{{detailLog.actualAmountText}}</text></view>
+    <view wx:if="{{detailLog.isVision && detailLog.ingredients.length}}" class="detail-ingredients"><text class="detail-section-title">识别到的食材</text><view wx:for="{{detailLog.ingredients}}" wx:key="name"><text>{{item.name}}</text><text>{{item.gramsText}}{{item.kcalText ? ' · ' + item.kcalText : ''}}</text></view></view>
+    <view class="detail-nutrition">
+      <view><text>{{detailLog.kcal || 0}}</text><text>千卡</text></view>
+      <view><text>{{detailLog.protein || 0}}g</text><text>蛋白质</text></view>
+      <view><text>{{detailLog.carbs || 0}}g</text><text>碳水</text></view>
+      <view><text>{{detailLog.fat || 0}}g</text><text>脂肪</text></view>
+    </view>
+    <view wx:if="{{detailLog.fiber}}" class="detail-extra"><text>膳食纤维</text><text>{{detailLog.fiber}}g</text></view>
+    <view wx:if="{{detailLog.nutritionDetails && detailLog.nutritionDetails.length}}" class="detail-more-nutrients">
+      <text class="detail-section-title">{{detailLog.isVision ? '完整营养估算' : '更多营养信息'}}</text>
+      <view><view wx:for="{{detailLog.nutritionDetails}}" wx:key="key"><text>{{item.label}}</text><text>{{item.displayText}}</text></view></view>
+      <text wx:if="{{detailLog.hasUnavailableNutrition}}" class="detail-data-note">“--”表示本次识别未返回可靠估算，并非营养含量为零。</text>
+    </view>
+    <view wx:if="{{detailLog.advice}}" class="detail-advice"><text>{{detailLog.adviceTitle || '本餐建议'}}</text><text>{{detailLog.advice}}</text></view>
+  </view>
+</view>

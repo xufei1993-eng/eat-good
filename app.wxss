@@ -1,0 +1,43 @@
+page {
+  --font-ui: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --ink: #243541;
+  --muted: #72828c;
+  --paper: #fbf7ef;
+  --white: #fffdf9;
+  --sage: #2e8f88;
+  --sage-deep: #244c59;
+  --sage-soft: #e6f1ea;
+  --coral: #ef7860;
+  --peach: #f8ddd6;
+  --lemon: #f4e8c7;
+  --line: #e4ddcf;
+  --cocoa: #243541;
+  --cocoa-muted: #72828c;
+  --yellow: #efb84d;
+  --yellow-soft: #f4e8c7;
+  --pink: #ef7860;
+  --pink-strong: #d95f49;
+  --pink-soft: #f8ddd6;
+  --mint: #e6f1ea;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 30rpx;
+}
+
+button,
+input,
+textarea {
+  font-family: var(--font-ui);
+  font-size: inherit;
+}
+
+button:active { opacity: .86; transform: scale(.985); }
+
+button::after {
+  border: 0;
+}
+
+.safe-top {
+  height: env(safe-area-inset-top);
+}

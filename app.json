@@ -1,0 +1,27 @@
+{
+  "__usePrivacyCheck__": true,
+  "pages": [
+    "pages/today/today",
+    "pages/history/history",
+    "pages/record/record",
+    "pages/preferences/preferences"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "backgroundColor": "#FBF7EF",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#7B847F",
+    "selectedColor": "#2E8F88",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/today/today", "text": "今日" },
+      { "pagePath": "pages/history/history", "text": "日历" },
+      { "pagePath": "pages/preferences/preferences", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}
