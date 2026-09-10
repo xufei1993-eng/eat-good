@@ -11,7 +11,7 @@
     <view class="goal-ring-stage">
       <view class="energy-ring"><view class="energy-ring-fill" style="{{energyRingStyle}}"><view></view></view></view>
       <text class="companion-prompt">{{isOverTarget ? '怎么吃多了？' : '记录一餐，我来帮你算'}}</text>
-      <image class="goal-companion {{isOverTarget ? 'over-target-companion' : ''}}" src="/assets/illustrations/cabbage-buddy-handdrawn.png" mode="aspectFit" aria-label="手绘大白菜营养助手"></image>
+      <image class="goal-companion {{isOverTarget ? 'over-target-companion' : ''}}" src="{{isOverTarget ? '/assets/illustrations/q-char-salad-over.png' : '/assets/illustrations/cabbage-buddy-handdrawn.png'}}" mode="aspectFit" aria-label="手绘大白菜营养助手"></image>
       <view class="ring-stat ring-stat-left"><text>已摄入</text><text>{{consumed.kcal || 0}} 千卡</text></view>
       <view class="ring-stat ring-stat-right"><text>今日目标</text><text>{{plan.targets.kcal}} 千卡</text></view>
     </view>

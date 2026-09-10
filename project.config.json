@@ -32,6 +32,7 @@
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [
+      { "type": "folder", "value": "admin" },
       { "type": "file", "value": "assets/.DS_Store" },
       { "type": "file", "value": "assets/personal/persona-01-孕期营养.png" },
       { "type": "file", "value": "assets/personal/persona-02-减脂塑形.png" },

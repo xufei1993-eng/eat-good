@@ -1,18 +1,36 @@
 <page-meta page-style="{{showLogEdit || showLogDetail ? 'overflow: hidden;' : ''}}"></page-meta>
 <view class="history-page">
   <view class="safe-top" style="height: {{headerInset}}px"></view>
- 
-  <view class="month-summary"><view class="summary-item"><image src="/assets/icons/activity.svg" mode="aspectFit"></image><view><text>{{monthTotals.kcal || 0}}</text><text>本月已记录千卡</text></view></view><view class="summary-item"><image src="/assets/icons/notebook-tabs.svg" mode="aspectFit"></image><view><text>{{monthTotals.count || 0}}</text><text>记录餐次</text></view></view></view>
-  <view class="calendar-card">
-    <view class="calendar-nav"><button data-delta="-1" bindtap="changeMonth" aria-label="上个月"><image src="/assets/icons/chevron-left.svg" mode="aspectFit"></image></button><text>{{monthText}}</text><button data-delta="1" bindtap="changeMonth" aria-label="下个月"><image src="/assets/icons/chevron-right.svg" mode="aspectFit"></image></button></view>
-    <view class="weekday-row"><text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text></view>
-    <view class="calendar-grid">
-      <button wx:for="{{calendar}}" wx:key="key" disabled="{{item.empty}}" data-date="{{item.date}}" bindtap="selectDay" class="day-cell {{item.selected ? 'selected' : ''}} {{item.isToday ? 'today' : ''}} {{item.count ? 'has-log' : ''}}">
-        <text wx:if="{{!item.empty}}" class="day-number">{{item.day}}</text>
-        <text wx:if="{{item.count}}" class="day-kcal">{{item.kcal}}k</text>
-      </button>
-    </view>
+  <view class="history-head"><button bindtap="addRecord" data-date="{{selectedDate}}"><image src="/assets/icons/camera.svg" mode="aspectFit"></image>记录一餐</button></view>
+<view class="month-summary">
+  <view class="summary-item">
+    <image src="/assets/icons/chart-line.svg" mode="aspectFit"></image>
+    <view><text>{{monthTotals.kcal || 0}}</text><text>本月已记录千卡</text></view>
   </view>
+  <view class="summary-item">
+    <image src="/assets/icons/utensils.svg" mode="aspectFit"></image>
+    <view><text>{{monthTotals.count || 0}}</text><text>记录餐次</text></view>
+  </view>
+</view>
+<view class="calendar-card">
+  <view class="calendar-nav">
+    <button data-delta="-1" bindtap="changeMonth" aria-label="上一月"><image src="/assets/icons/chevron-left.svg" mode="aspectFit"></image></button>
+    <text>{{monthText}}</text>
+    <button data-delta="1" bindtap="changeMonth" aria-label="下一月"><image src="/assets/icons/chevron-right.svg" mode="aspectFit"></image></button>
+  </view>
+  <view class="weekday-row">
+    <block wx:for="{{weekdays}}" wx:key="*this"><text>{{item}}</text></block>
+  </view>
+  <view class="calendar-grid">
+    <block wx:for="{{calendar}}" wx:key="key">
+      <button wx:if="{{item.empty}}" class="day-cell" disabled></button>
+      <button wx:else class="day-cell {{item.count ? 'has-log' : ''}} {{item.isToday ? 'today' : ''}} {{item.selected ? 'selected' : ''}}" data-date="{{item.date}}" bindtap="selectDay" aria-label="{{item.date}}"><text class="day-number">{{item.day}}</text><text class="day-kcal">{{item.count ? item.kcal + 'k' : ''}}</text></button>
+    </block>
+  </view>
+</view>
+ 
+  
+  
   <view class="selected-head"><view><text>{{selectedLabel}}</text><text>{{selectedLogs.length ? '已记录 ' + selectedLogs.length + ' 餐' : '还没有饮食记录'}}</text></view><text>{{selectedTotals.kcal || 0}} 千卡</text></view>
   <view wx:if="{{selectedLogs.length}}" class="daily-macros"><view><text>{{selectedTotals.protein}}g</text><text>蛋白质</text></view><view><text>{{selectedTotals.carbs}}g</text><text>碳水</text></view><view><text>{{selectedTotals.fat}}g</text><text>脂肪</text></view></view>
   <view wx:for="{{selectedLogs}}" wx:key="id" class="log-row" data-id="{{item.id}}" bindtap="openLogDetail" aria-label="查看{{item.title}}详情"><image wx:if="{{item.displayImageUrl}}" src="{{item.displayImageUrl}}" mode="aspectFill" /><view wx:else class="food-placeholder"><image src="/assets/icons/utensils.svg" mode="aspectFit"></image></view><view class="log-copy"><view class="log-title-line"><text>{{item.title}}</text><text class="log-source {{item.isVision ? 'vision' : ''}}">{{item.sourceLabel}}</text></view><text>{{item.unit}} · 蛋白质 {{item.protein}}g</text></view><text class="log-kcal">{{item.kcal}} 千卡</text><view class="log-actions"><button class="edit-log" data-id="{{item.id}}" catchtap="openLogEdit" aria-label="编辑这条记录"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image></button><button class="delete-log" data-id="{{item.id}}" catchtap="deleteLog" aria-label="删除这条记录"><image src="/assets/icons/trash-2.svg" mode="aspectFit"></image></button></view></view>

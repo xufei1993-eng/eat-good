@@ -5,6 +5,16 @@ const PLAN_LIBRARY = require("../data/base-meals")
 
 function scaledValue(value, factor) { return Math.round(value * factor * 10) / 10 }
 
+function normalizeTotals(totals) {
+  return {
+    kcal: Math.round(totals.kcal),
+    protein: scaledValue(totals.protein, 1),
+    carbs: scaledValue(totals.carbs, 1),
+    fat: scaledValue(totals.fat, 1),
+    fiber: scaledValue(totals.fiber, 1)
+  }
+}
+
 function cachedCloudMeals(slot) {
   if (typeof wx === "undefined" || !wx.getStorageSync) return []
   const dishes = wx.getStorageSync("cloudCatalog:dish")
@@ -77,13 +87,13 @@ function buildDailyPlan(preferences = {}, date = new Date()) {
     { slot: "dinner", label: "晚餐", time: "18:30", ...chooseMeal(mealsForTaste(dinnerLibrary.length ? dinnerLibrary : PLAN_LIBRARY.dinner, tasteFocus, "dinner", date, rotationOffsets.dinner), "dinner", { ...preferences, tasteFocus, rotationOffset: rotationOffsets.dinner }, date) }
   ]
   const meals = baseMeals.map((meal) => scaleMeal(meal, profileTargets && profileTargets.dailyKcal * distributions[meal.slot]))
-  const mealTotals = meals.reduce((sum, meal) => ({
+  const mealTotals = normalizeTotals(meals.reduce((sum, meal) => ({
     kcal: sum.kcal + meal.kcal,
     protein: sum.protein + meal.protein,
     carbs: sum.carbs + meal.carbs,
     fat: sum.fat + meal.fat,
     fiber: sum.fiber + meal.fiber
-  }), { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 })
+  }), { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }))
   const targets = profileTargets ? { ...mealTotals, kcal: profileTargets.dailyKcal, protein: profileTargets.protein, fiber: profileTargets.fiber } : mealTotals
   return { meals, targets, profileTargets, mealTotals }
 }

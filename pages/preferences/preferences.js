@@ -1,6 +1,7 @@
 const { mealReminderTemplateId } = require("../../config/index")
 const { calculateProfileTargets, isProfileComplete, PROFILE_SCHEMA_VERSION } = require("../../utils/profile-calculator")
 const { defaultProfileAvatar, buildProfileModes } = require("../../utils/profile-avatar")
+const { validateNickname } = require("../../utils/nickname")
 
 const CUISINES = ["家常菜", "川菜", "粤菜", "江浙菜", "西北菜", "东北菜", "日韩料理", "轻食", "烧烤", "粉面", "海鲜"]
 const DEFAULT_CUISINES = ["家常菜"]
@@ -19,6 +20,11 @@ function buildCuisineOptions(savedTastes = []) {
 
 function dateKey(date) {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-")
+}
+
+function describeCloudError(error) {
+  const source = error || {}
+  return { name: source.name || "", message: source.message || "", errCode: source.errCode == null ? "" : source.errCode, errMsg: source.errMsg || "", requestId: source.requestId || "" }
 }
 
 Page({
@@ -85,7 +91,9 @@ Page({
     const gender = restored.profileMode === "pregnancy" ? "female" : (restored.gender || "")
     this.setData({
       ...restored,
-      headerInset: menuButton.bottom + 8,
+      // Align the page chrome with the lower edge of the floating menu area.
+      // Using the menu's top keeps the title from being pushed far below it.
+      headerInset: Math.max(0, menuButton.top - 8),
       isOnboarding,
       isEditing: false,
       profileMode: restored.profileMode === "unhealth" ? (isOnboarding ? "" : "health") : (restored.profileMode || (isOnboarding ? "" : "health")),
@@ -252,6 +260,12 @@ Page({
     } })
   },
 
+  handleAvatarError() {
+    if (!this.data.avatarUrl) return
+    this.setData({ avatarUrl: "" })
+    const saved = wx.getStorageSync("preferences") || {}
+    wx.setStorageSync("preferences", { ...saved, avatarUrl: "" })
+  },
   editProfile() { this.setData({ isEditing: true }) },
   cancelEdit() { this.setData({ isEditing: false }, () => this.loadSavedProfile()) },
 
@@ -492,7 +506,7 @@ Page({
   },
   nextOnboarding() {
     const step = this.data.onboardingStep
-    if (step === 1 && !String(this.data.nickname || "").trim()) { wx.showToast({ title: "请先填写昵称", icon: "none" }); return }
+    if (step === 1) { const check = validateNickname(this.data.nickname); if (!check.ok) { wx.showToast({ title: check.message, icon: "none" }); return } }
     if (step === 1 && !this.data.gender) {
       wx.showToast({ title: "请先选择性别", icon: "none" })
       return
@@ -530,7 +544,8 @@ Page({
       wx.showToast({ title: "请先选择使用群体", icon: "none" })
       return
     }
-    if (wasOnboarding && !String(nickname || "").trim()) return wx.showToast({ title: "请先填写昵称", icon: "none" })
+    const nicknameCheck = validateNickname(nickname)
+    if (!nicknameCheck.ok) return wx.showToast({ title: nicknameCheck.message, icon: "none" })
     if (!this.validateBodyFields()) return
     if (!allergyStatus) {
       wx.showToast({ title: "请确认是否存在过敏原", icon: "none" })
@@ -549,13 +564,26 @@ Page({
     wx.setStorageSync("preferences", { profileCreated: true, profileVersion: PROFILE_SCHEMA_VERSION, nickname: String(nickname || "").trim(), profileMode, allergyStatus, gender, age: Number(age), heightCm: Number(heightCm), currentWeightKg: Number(currentWeightKg), prePregnancyWeightKg: profileMode === "pregnancy" ? Number(prePregnancyWeightKg) : 0, profileTargets, calorieMin, calorieMax, proteinMin, trimester, activityLevel, gestationalDiabetes, pregnancyHypertension, reminders, budget, tastes, allergens, avoidRepeat, noSugar, avatarUrl: avatarUrl || "" })
     const finish = () => { this.setData({ isOnboarding: false, isEditing: false }); wx.showToast({ title: wasOnboarding ? "档案创建成功" : "档案已更新", icon: "success" }); setTimeout(() => wx.switchTab({ url: "/pages/today/today" }), 500) }
     if (app.globalData.user && wx.cloud) {
-      wx.cloud.callFunction({ name: "auth", data: { action: "login", profile: { nickname: String(nickname || "").trim(), profileCompleted: true, profile: { profileCreated: true, profileVersion: PROFILE_SCHEMA_VERSION, nickname: String(nickname || "").trim(), profileMode, allergyStatus, gender, age: Number(age), heightCm: Number(heightCm), currentWeightKg: Number(currentWeightKg), prePregnancyWeightKg: profileMode === "pregnancy" ? Number(prePregnancyWeightKg) : 0, profileTargets, calorieMin, calorieMax, proteinMin, trimester, activityLevel, gestationalDiabetes, pregnancyHypertension, reminders, budget, tastes, allergens, avoidRepeat, noSugar, avatarUrl: avatarUrl || "" } } } }).then((response) => {
+      const authPayload = { action: "login", profile: { nickname: String(nickname || "").trim(), profileCompleted: true, profile: { profileCreated: true, profileVersion: PROFILE_SCHEMA_VERSION, nickname: String(nickname || "").trim(), profileMode, allergyStatus, gender, age: Number(age), heightCm: Number(heightCm), currentWeightKg: Number(currentWeightKg), prePregnancyWeightKg: profileMode === "pregnancy" ? Number(prePregnancyWeightKg) : 0, profileTargets, calorieMin, calorieMax, proteinMin, trimester, activityLevel, gestationalDiabetes, pregnancyHypertension, reminders, budget, tastes, allergens, avoidRepeat, noSugar, avatarUrl: avatarUrl || "" } } }
+      console.log("[吃对饭][档案保存] 开始调用 auth 云函数", { profileMode, profileCompleted: true, hasNickname: Boolean(nickname), hasAvatar: Boolean(avatarUrl), age: Number(age), heightCm: Number(heightCm), currentWeightKg: Number(currentWeightKg) })
+      wx.cloud.callFunction({ name: "auth", data: authPayload }).then((response) => {
+        console.log("[吃对饭][档案保存] auth 云函数原始响应", response)
         const result = response && response.result
-        if (!result || !result.ok || !result.user) throw new Error(result && result.message || "同步用户信息失败")
+        if (!result || !result.ok || !result.user) {
+          console.log("[吃对饭][档案保存] auth 返回业务失败", { result, requestId: response && (response.requestId || response.requestID) })
+          const error = new Error(result && result.message || "同步用户信息失败")
+          error.debug = result && result.debug
+          throw error
+        }
         app.globalData.user = result.user
         wx.setStorageSync("authUser", result.user)
+        console.log("[吃对饭][档案保存] auth 保存成功", { userId: result.user._id || "", profileCompleted: result.user.profileCompleted })
         finish()
-      }).catch((error) => wx.showToast({ title: error && error.message === "昵称已被使用，请换一个" ? error.message : "云端保存失败，请重试", icon: "none" }))
+      }).catch((error) => {
+        const detail = describeCloudError(error)
+        console.log("[吃对饭][档案保存] auth 云函数调用失败", { ...detail, serverDebug: error && error.debug || null })
+        wx.showToast({ title: error && error.message === "昵称已被使用，请换一个" ? error.message : "云端保存失败，请查看控制台日志", icon: "none", duration: 2600 })
+      })
       return
     }
     finish()

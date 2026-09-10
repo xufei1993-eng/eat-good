@@ -66,14 +66,7 @@
     <view class="topbar-spacer"></view>
   </view>
 
-  <view class="prefs-intro">
-    <view class="prefs-copy">
-      <text class="prefs-title">{{isOnboarding ? '先了解你\n再安排每一餐' : '为不同目标\n匹配不同饮食'}}</text>
-      <text class="prefs-caption">{{isOnboarding ? '你的目标和安全设置将决定之后看到的全部推荐' : '推荐规则会随当前人群模式调整'}}</text>
-    </view>
-    <view class="intro-index"><text>01</text><view></view><text>CARE</text></view>
-  </view>
-
+  <view class="section nickname-edit-section"><text class="section-title">个人昵称</text><text class="section-hint">昵称会同步保存到你的用户档案</text><view class="nickname-edit-field"><input type="nickname" maxlength="24" value="{{nickname}}" data-field="nickname" bindinput="updateProfileField" bindblur="updateProfileField" placeholder="请输入昵称" /></view></view>
   <view class="section">
     <text class="section-title">选择使用模式</text>
     <view class="profile-mode-list">
@@ -183,7 +176,7 @@
   <block wx:else>
     <view wx:if="{{!profileSummary}}" class="my-guest-card"><view class="my-guest-avatar">食</view><view class="my-guest-copy"><text>登录后管理你的饮食档案</text><text>档案和记录会安全保存到云端</text></view><button class="profile-auth-button" bindtap="authorizeFromProfile" loading="{{authLoading}}" disabled="{{authLoading}}">授权登录</button></view>
     <view wx:if="{{profileSummary}}" class="my-profile-card">
-      <view class="my-profile-main"><button class="my-avatar-button" bindtap="chooseAvatar" aria-label="上传头像"><image class="my-avatar-image" src="{{avatarUrl || profileSummary.defaultAvatar}}" mode="aspectFill"></image><view class="avatar-camera"><image src="/assets/icons/camera.svg" mode="aspectFit"></image></view></button><view class="my-profile-copy"><text class="my-plan-title">{{profileSummary.nickname}}</text><text class="my-plan-mode">{{profileSummary.modeLabel}} · {{profileSummary.detail}}</text><text class="avatar-hint">点击头像可更换照片</text></view><button wx:if="{{!authUser}}" class="profile-auth-button profile-auth-inline" bindtap="authorizeFromProfile" loading="{{authLoading}}" disabled="{{authLoading}}">授权登录</button><button wx:else class="profile-edit-button" bindtap="editProfile"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><text>编辑档案</text></button></view>
+      <view class="my-profile-main"><button class="my-avatar-button" bindtap="chooseAvatar" aria-label="上传头像"><image class="my-avatar-image" src="{{avatarUrl || profileSummary.defaultAvatar}}" mode="aspectFill" binderror="handleAvatarError"></image><view class="avatar-camera"><image src="/assets/icons/camera.svg" mode="aspectFit"></image></view></button><view class="my-profile-copy"><text class="my-plan-title">{{profileSummary.nickname}}</text><text class="my-plan-mode">{{profileSummary.modeLabel}} · {{profileSummary.detail}}</text><text class="avatar-hint">点击头像可更换照片</text></view><button wx:if="{{!authUser}}" class="profile-auth-button profile-auth-inline" bindtap="authorizeFromProfile" loading="{{authLoading}}" disabled="{{authLoading}}">授权登录</button><button wx:else class="profile-edit-button" bindtap="editProfile" style="position: relative; left: -137rpx; top: 0rpx"><image src="/assets/icons/pencil.svg" mode="aspectFit"></image><text>编辑档案</text></button></view>
       <view class="my-metrics">
         <view><text>{{age}}</text><text>年龄</text></view>
         <view><text>{{heightCm}}cm</text><text>身高</text></view>

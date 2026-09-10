@@ -88,8 +88,17 @@ exports.main = async (event = {}) => {
   }
   if (event.action === "saveSettings") {
     if (!canManage(event)) return { ok: false, code: "UNAUTHORIZED", message: "管理密钥无效" }
-    const monthlyPhotoLimit = Math.min(Math.max(Number(event.settings && event.settings.monthlyPhotoLimit) || 5, 0), 999)
-    await db.collection("app_settings").doc("general").set({ data: { monthlyPhotoLimit, updatedAt: db.serverDate(), updatedBy: (cloud.getWXContext().OPENID || "admin").slice(0, 80) } })
+    const requestedLimit = Number(event.settings && event.settings.monthlyPhotoLimit)
+    const monthlyPhotoLimit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 0), 999) : 5
+    try {
+      await db.collection("app_settings").doc("general").set({ data: { monthlyPhotoLimit, updatedAt: db.serverDate(), updatedBy: (cloud.getWXContext().OPENID || "admin").slice(0, 80) } })
+    } catch (error) {
+      const rawMessage = String(error && (error.errMsg || error.message) || "")
+      if (/collection not exists|Db or Table not exist/i.test(rawMessage)) {
+        return { ok: false, code: "SETTINGS_COLLECTION_NOT_FOUND", message: "数据库缺少 app_settings 集合，请先在 CloudBase 数据库中创建该集合后再保存。" }
+      }
+      throw error
+    }
     return { ok: true, settings: { monthlyPhotoLimit } }
   }
   const type = event.type === "food" ? "food" : "dish"

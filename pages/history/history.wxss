@@ -4,12 +4,12 @@
 
 /* Taste Skill redesign */
 .history-page { padding: 0 28rpx calc(178rpx + env(safe-area-inset-bottom)); background: #F2F5F2; }
-.history-head { padding: 24rpx 2rpx 30rpx; align-items: center; }
+.history-head { padding: 8rpx 2rpx 16rpx; justify-content: flex-start; }
 .history-eyebrow { color: #738078; font-size: 20rpx; }
 .history-title { margin-top: 10rpx; color: #17231D; font-size: 39rpx; }
 .history-head button { height: 64rpx; padding: 0 20rpx; border-radius: 12rpx; background: #176B4D; line-height: 64rpx; }
 .month-summary { padding: 27rpx 28rpx; border-radius: 24rpx; background: #105C42; box-shadow: 0 16rpx 38rpx rgba(13,81,57,.14); }
-.calendar-card { margin-top: 18rpx; padding: 24rpx 16rpx; border: 0; border-radius: 24rpx; box-shadow: 0 8rpx 28rpx rgba(28,57,43,.055); }
+.calendar-card { margin-top: 14rpx; padding: 24rpx 16rpx; border: 0; border-radius: 24rpx; box-shadow: 0 8rpx 28rpx rgba(28,57,43,.055); }
 .calendar-nav button { border-radius: 50%; background: #EDF2EE; }
 .day-cell { border-radius: 12rpx; }
 .day-cell.has-log { background: #E7F2EB; }

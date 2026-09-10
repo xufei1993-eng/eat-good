@@ -5,6 +5,7 @@ const { getMealEmoji, getCuisineEmoji } = require("../../utils/meal-emoji")
 const { buildDishCatalog, searchDishes, dishServingAmount, dishMeasureUnit } = require("../../utils/dish-catalog")
 const { loadCloudCatalog, searchCloudCatalog } = require("../../utils/cloud-catalog")
 const { defaultProfileAvatar } = require("../../utils/profile-avatar")
+const { compressForUpload } = require("../../utils/image-helper")
 const { uiVariant } = require("../../config/index")
 const CUISINES = ["家常菜", "川菜", "粤菜", "江浙菜", "西北菜", "东北菜", "日韩料理", "轻食", "烧烤", "粉面", "海鲜"]
 
@@ -520,41 +521,43 @@ Page({
     if (!amount || amount <= 0) return wx.showToast({ title: "请填写实际食用量", icon: "none" })
     this.commitSheetLog({ source: "manual", cuisine: "手工录入", title, amount, measureUnit, unit: `${title} ${amount}${measureUnit}`, kcal: values[0], protein: values[1], carbs: values[2], fat: values[3], fiber: 0 })
   },
-  chooseSheetPhoto() {
-    const quotaKey = `photoQuota-${new Date().getFullYear()}-${new Date().getMonth() + 1}`
-    const quotaUsed = Number(wx.getStorageSync(quotaKey) || 0)
-    const quotaLimit = Number(wx.getStorageSync("monthlyPhotoLimit")) || 5
-    if (quotaUsed >= quotaLimit) return wx.showModal({ title: "本月拍照次数已用完", content: "升级会员即可继续使用拍照识别功能", confirmText: "去开通", cancelText: "稍后再说" })
-    wx.chooseMedia({ count: 1, mediaType: ["image"], sourceType: ["camera", "album"], success: (res) => {
-      const filePath = res.tempFiles[0].tempFilePath
+  async chooseSheetPhoto() {
+    if (this.data.sheetAnalyzing || this.checkingPhotoQuota) return
+    this.checkingPhotoQuota = true
+    const allowed = await require("../../utils/photo-quota").canTakePhoto()
+    this.checkingPhotoQuota = false
+    if (!allowed) return
+    try {
+      const res = await new Promise((resolve, reject) => {
+        wx.chooseMedia({ count: 1, mediaType: ["image"], sourceType: ["camera", "album"], success: resolve, fail: reject })
+      })
+      const rawPath = res.tempFiles[0].tempFilePath
+      const filePath = await compressForUpload(rawPath)
       this.setData({ sheetPhotoPath: filePath, sheetAnalyzing: true, sheetError: "", sheetVisionDish: null, sheetVisionEstimate: null, sheetServing: 1 })
       const cloudPath = `meal-images/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-      wx.cloud.uploadFile({ cloudPath, filePath }).then((upload) => wx.cloud.callFunction({ name: "analyzeMealImage", data: { fileID: upload.fileID, profile: this.getPreferences() } }).then((response) => ({ upload, response })))
-        .then(({ upload, response }) => {
-          const result = response.result || {}
-          if (!result.ok || !result.analysis) throw new Error(result.message || "暂时无法识别这张图片")
-          const analysis = result.analysis
-          wx.setStorageSync(quotaKey, quotaUsed + 1)
-          console.log('[吃对饭][首页拍照] AI识别输出:', analysis)
-          analysis.score = Math.max(0, Math.min(100, Number(analysis.score) || 0))
-          analysis.scoreTitle = String(analysis.scoreTitle || "营养点评").slice(0, 4)
-          analysis.score = Math.max(0, Math.min(100, Number(analysis.score) || 0))
-          analysis.scoreTitle = String(analysis.scoreTitle || "营养点评").slice(0, 4)
-          const ingredients = Array.isArray(analysis.ingredients) ? analysis.ingredients : []
-          const nutrients = analysis.nutrients || {}
-          const nutritionDetails = SHEET_NUTRIENTS.map((item) => { const raw = nutrients[item.key]; const value = raw && typeof raw === "object" ? raw.value : raw; const numericValue = value == null || value === "" ? null : Number(value); return { ...item, value: Number.isFinite(numericValue) ? numericValue : null, displayText: Number.isFinite(numericValue) ? `${numericValue}${item.unit}` : "--" } }).filter((item) => item.displayText !== "--" || item.key === "fiber")
-          const servingGrams = Math.round(ingredients.reduce((sum, item) => sum + (Number(item.grams) || 0), 0)) || 100
-          const normalizedIngredients = ingredients.map((item) => ({ name: item.name || "未命名食材", grams: Number(item.grams) || 0, kcal: Number(item.kcal) || 0 }))
-          const dish = { confidence: analysis.confidence || "", recognitionEdited: false, title: analysis.dishName || "图片中的餐食", unit: ingredients.map((item) => `${item.name} ${item.grams || ""}g`).join(" · ") || "主要食材待确认", servingGrams, ingredients: normalizedIngredients, kcal: Number(analysis.kcal) || ingredients.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0), protein: Number(analysis.protein) || 0, carbs: Number(analysis.carbs) || 0, fat: Number(analysis.fat) || 0, fiber: Number(analysis.fiber) || 0, nutritionDetails, adviceTitle: analysis.adviceTitle || "本餐建议", advice: analysis.advice || "把这餐放进全天结构中看，后续餐次可补足蔬菜、全谷物或优质蛋白。" }
-          dish.score = analysis.score
-          dish.scoreTitle = analysis.scoreTitle
-          this.setData({ sheetPhotoFileID: upload.fileID, sheetAnalyzing: false, sheetVisionDish: dish, sheetVisionEstimate: dish, sheetCustomGrams: String(servingGrams) })
-          const autoSave = (imagePath) => { const current = this.data.sheetVisionEstimate || dish; this.commitSheetLog(sheetVisionRecord(this, current, imagePath), { keepOpen: true }) }
-          if (wx.saveFile) wx.saveFile({ tempFilePath: filePath, success: (saved) => autoSave(saved.savedFilePath), fail: () => autoSave(filePath) })
-          else autoSave(filePath)
-        })
-        .catch((error) => this.setData({ sheetAnalyzing: false, sheetError: error.message || "识别失败，请改用搜索或手工录入" }))
-    } })
+      const upload = await wx.cloud.uploadFile({ cloudPath, filePath })
+      const response = await wx.cloud.callFunction({ name: "analyzeMealImage", data: { fileID: upload.fileID, profile: this.getPreferences() } })
+      const result = response.result || {}
+      if (!result.ok || !result.analysis) throw new Error(result.message || "暂时无法识别这张图片")
+      const analysis = result.analysis
+      console.log('[吃对饭][首页拍照] AI识别输出:', analysis)
+      analysis.score = Math.max(0, Math.min(100, Number(analysis.score) || 0))
+      analysis.scoreTitle = String(analysis.scoreTitle || "营养点评").slice(0, 4)
+      const ingredients = Array.isArray(analysis.ingredients) ? analysis.ingredients : []
+      const nutrients = analysis.nutrients || {}
+      const nutritionDetails = SHEET_NUTRIENTS.map((item) => { const raw = nutrients[item.key]; const value = raw && typeof raw === "object" ? raw.value : raw; const numericValue = value == null || value === "" ? null : Number(value); return { ...item, value: Number.isFinite(numericValue) ? numericValue : null, displayText: Number.isFinite(numericValue) ? `${numericValue}${item.unit}` : "--" } }).filter((item) => item.displayText !== "--" || item.key === "fiber")
+      const servingGrams = Math.round(ingredients.reduce((sum, item) => sum + (Number(item.grams) || 0), 0)) || 100
+      const normalizedIngredients = ingredients.map((item) => ({ name: item.name || "未命名食材", grams: Number(item.grams) || 0, kcal: Number(item.kcal) || 0 }))
+      const dish = { confidence: analysis.confidence || "", recognitionEdited: false, title: analysis.dishName || "图片中的餐食", unit: ingredients.map((item) => `${item.name} ${item.grams || ""}g`).join(" · ") || "主要食材待确认", servingGrams, ingredients: normalizedIngredients, kcal: Number(analysis.kcal) || ingredients.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0), protein: Number(analysis.protein) || 0, carbs: Number(analysis.carbs) || 0, fat: Number(analysis.fat) || 0, fiber: Number(analysis.fiber) || 0, nutritionDetails, adviceTitle: analysis.adviceTitle || "本餐建议", advice: analysis.advice || "把这餐放进全天结构中看，后续餐次可补足蔬菜、全谷物或优质蛋白。" }
+      dish.score = analysis.score
+      dish.scoreTitle = analysis.scoreTitle
+      this.setData({ sheetPhotoFileID: upload.fileID, sheetAnalyzing: false, sheetVisionDish: dish, sheetVisionEstimate: dish, sheetCustomGrams: String(servingGrams) })
+      const autoSave = (imagePath) => { const current = this.data.sheetVisionEstimate || dish; this.commitSheetLog(sheetVisionRecord(this, current, imagePath), { keepOpen: true }) }
+      if (wx.saveFile) wx.saveFile({ tempFilePath: filePath, success: (saved) => autoSave(saved.savedFilePath), fail: () => autoSave(filePath) })
+      else autoSave(filePath)
+    } catch (error) {
+      this.setData({ sheetAnalyzing: false, sheetError: (error && error.message) || "识别失败，请改用搜索或手工录入" })
+    }
   },
   chooseSheetPortion(e) {
     const sheetServing = Number(e.currentTarget.dataset.value) || 1

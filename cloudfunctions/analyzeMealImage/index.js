@@ -2,6 +2,7 @@ const cloud = require("wx-server-sdk")
 const https = require("https")
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const quotaStore = require("./quota")(cloud.database(), () => cloud.getWXContext().OPENID)
 
 function requestJson(url, headers, body) {
   return new Promise((resolve, reject) => {
@@ -18,6 +19,7 @@ function requestJson(url, headers, body) {
       })
     })
     request.on("error", reject)
+    request.setTimeout(20000, () => request.destroy(new Error("识别服务超时，请重试")))
     request.write(JSON.stringify(body))
     request.end()
   })
@@ -88,7 +90,7 @@ function nutrientCoverage(nutrients) {
   return NUTRIENT_KEYS.filter((key) => key !== "transFat" && Number(nutrients[key]) > 0).length
 }
 
-exports.main = async (event) => {
+async function analyze(event) {
   const apiKey = process.env.VISION_API_KEY || process.env.OPENAI_API_KEY
   // TokenHub exposes an OpenAI-compatible endpoint. Keep both values
   // configurable so the function can be switched without a code change.
@@ -142,5 +144,27 @@ exports.main = async (event) => {
     return { ok: true, analysis }
   } catch (error) {
     return { ok: false, message: "模型返回格式不完整，请重新拍摄或手工记录。" }
+  }
+}
+
+exports.main = async (event = {}) => {
+  let reservation
+  try {
+    if (event.action === "getQuota") return { ok: true, quota: await quotaStore.read() }
+    reservation = await quotaStore.reserve()
+    const result = await analyze(event)
+    if (!result.ok) {
+      throw Object.assign(new Error(result.message), { code: result.code || "ANALYSIS_FAILED" })
+    }
+    return { ...result, quota: reservation }
+  } catch (error) {
+    if (reservation) {
+      try { await quotaStore.refund(reservation) } catch (refundError) {
+        console.error("Photo quota refund failed", { userId: reservation.userId, month: reservation.month, error: refundError })
+        return { ok: false, code: "REFUND_FAILED", message: "识别失败，次数退回失败，请联系管理员核对用量" }
+      }
+    }
+    console.error("Photo recognition failed", error)
+    return { ok: false, code: error.code || "PHOTO_FAILED", message: error.code ? error.message : "无法读取拍照额度或完成识别，请稍后重试" }
   }
 }

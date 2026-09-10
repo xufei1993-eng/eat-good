@@ -410,7 +410,7 @@
 .progress-card-head button,.compact-head button,.recommend-head button { flex: 0 0 auto; white-space: nowrap; }
 .taste-section,.recommend-head { margin-left: 0; margin-right: 0; }
 .recommend-head { min-height: 58rpx; }
-.record-fab { position: fixed; z-index: 900; right: 34rpx; bottom: calc(142rpx + env(safe-area-inset-bottom)); width: 96rpx; height: 96rpx; margin: 0; padding: 0; border: 7rpx solid rgba(255,255,255,.94); border-radius: 50%; background: #2e8f88; color: #fff; box-shadow: 0 12rpx 28rpx rgba(46,143,136,.28); line-height: 82rpx; }
+.record-fab { position: fixed; z-index: 900; right: 34rpx; bottom: calc(142rpx + env(safe-area-inset-bottom)); width: 96rpx; height: 96rpx; margin: 0; padding: 0; border: 7rpx solid rgba(255,255,255,.94); border-radius: 50%; background: #2e8f88; color: #fff; box-shadow: 0 12rpx 28rpx rgba(46,143,136,.28); box-sizing: border-box; display: flex; align-items: center; justify-content: center; line-height: 1; }
 .record-fab::after { border: 0; }
 .record-fab:active { transform: scale(.96); }
 .record-fab-icon { position: relative; width: 82rpx; height: 82rpx; display: flex; align-items: center; justify-content: center; }
@@ -759,7 +759,7 @@
 .today-head .today-identity { align-items: center; }
 .today-head .today-identity-copy { flex: 1; min-width: 0; }
 .today-head .today-meta { white-space: nowrap; }
-.record-camera-main { width: 46rpx; height: 46rpx; filter: brightness(0) invert(1); }
+.record-camera-main { display: block; flex: 0 0 auto; width: 46rpx; height: 46rpx; filter: brightness(0) invert(1); }
 .variant-paper .goal-card { padding-bottom: 20rpx; }
 .variant-paper .goal-ring-stage { height: 306rpx; }
 .variant-paper .energy-ring { top: 2rpx; width: 380rpx; height: 194rpx; }
@@ -781,3 +781,26 @@
 .sheet-fun-score { display:flex; align-items:center; justify-content:space-between; padding:18rpx 22rpx; margin-bottom:18rpx; border-radius:18rpx; background:#e6f1ea; color:#245d49; }
 .sheet-fun-score>text { font-size:30rpx; font-weight:850; }
 .sheet-fun-score view text:first-child { font-size:52rpx; font-weight:900; }
+
+/* Accessibility pass: increase the primary paper-dashboard text sizes. */
+.variant-paper .today-greeting,
+.variant-paper .today-plan-label { font-size: 27rpx; }
+.variant-paper .friend-name text:first-child { font-size: 29rpx; }
+.variant-paper .friend-name text:last-child,
+.variant-paper .friend-badge { font-size: 22rpx; }
+.variant-paper .goal-balance > text { font-size: 25rpx; }
+.variant-paper .goal-balance > view text:first-child { font-size: 58rpx; }
+.variant-paper .goal-balance > view text:last-child,
+.variant-paper .goal-overview-head > text { font-size: 23rpx; }
+.variant-paper .ring-stat text:first-child,
+.variant-paper .goal-macros > view > text:first-child { font-size: 22rpx; }
+.variant-paper .ring-stat text:last-child,
+.variant-paper .goal-macros > view > text:nth-child(2) { font-size: 24rpx; }
+.variant-paper .meal-friend-message { font-size: 27rpx; }
+.variant-paper .meal-friend-next { font-size: 25rpx; }
+.variant-paper .recommend-title-group > view text:first-child { font-size: 34rpx; }
+.variant-paper .recommend-title-group > view text:last-child { font-size: 22rpx; }
+
+.variant-paper .today-head .today-meta { flex-wrap: wrap; white-space: normal; line-height: 1.5; }
+.variant-paper .today-meta > text { white-space: nowrap; }
+.variant-paper .today-date { font-size: 27rpx; }

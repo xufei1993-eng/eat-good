@@ -1,6 +1,7 @@
 const { buildDailyPlan, todayKey } = require("../../utils/daily-plan")
 const { buildDishCatalog, searchDishes, dishServingAmount, dishMeasureUnit, dishNutritionPer100 } = require("../../utils/dish-catalog")
 const { loadCloudCatalog, searchCloudCatalog } = require("../../utils/cloud-catalog")
+const { compressForUpload } = require("../../utils/image-helper")
 
 const PORTIONS = [
   { value: 0.5, label: "半份" },
@@ -32,7 +33,7 @@ const ROLE_ADVICE_FALLBACKS = {
 function round1(value) {
   return Math.round(Number(value || 0) * 10) / 10
 }
-function photoQuota() { const key = `photoQuota-${new Date().getFullYear()}-${new Date().getMonth() + 1}`; return { key, used: Number(wx.getStorageSync(key) || 0), limit: Number(wx.getStorageSync("monthlyPhotoLimit")) || 5 } }
+const { canTakePhoto } = require("../../utils/photo-quota")
 
 function profileForVision(preferences = {}) {
   return {
@@ -89,7 +90,6 @@ Page({
     ,cuisineFilter: "全部", cuisineFilters: ["全部", "家常菜", "川菜", "粤菜", "江浙菜", "西北菜", "东北菜", "日韩料理", "轻食", "烧烤", "粉面", "海鲜", "自助餐"]
   },
   onLoad(options) {
-    wx.cloud.callFunction({ name: "catalog", data: { action: "getSettings" } }).then((response) => { const limit = Number(response.result && response.result.settings && response.result.settings.monthlyPhotoLimit); if (Number.isFinite(limit)) wx.setStorageSync("monthlyPhotoLimit", limit) }).catch(() => {})
     const menu = wx.getMenuButtonBoundingClientRect()
     const slot = options.slot || "snack"
     const recordDate = options.date || todayKey()
@@ -162,51 +162,56 @@ Page({
       if (this.data.analysis) this.saveVisionLog({ silent: true })
     })
   },
-  choosePhoto() {
-    const quota = photoQuota(); if (quota.used >= quota.limit) return wx.showModal({ title: "本月拍照次数已用完", content: "升级会员即可继续使用拍照识别功能", confirmText: "去开通", cancelText: "稍后再说" })
-    wx.chooseMedia({ count: 1, mediaType: ["image"], sourceType: ["camera", "album"], success: (res) => {
+  async choosePhoto() {
+    if (this.data.analyzing || this.checkingPhotoQuota) return
+    this.checkingPhotoQuota = true
+    const allowed = await canTakePhoto()
+    this.checkingPhotoQuota = false
+    if (!allowed) return
+    try {
+      const res = await new Promise((resolve, reject) => {
+        wx.chooseMedia({ count: 1, mediaType: ["image"], sourceType: ["camera", "album"], success: resolve, fail: reject })
+      })
       const previousFileID = this.data.imageFileID
-      const filePath = res.tempFiles[0].tempFilePath
+      const rawPath = res.tempFiles[0].tempFilePath
+      const filePath = await compressForUpload(rawPath)
       const visionProfile = profileForVision(wx.getStorageSync("preferences") || {})
       this.setData({ imagePath: filePath, analyzing: true, analysis: null, analysisError: "", selectedDish: null, estimate: null, autoSaveStatus: "", savedImagePath: "" })
       const cloudPath = `meal-images/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
-      wx.cloud.uploadFile({ cloudPath, filePath })
-        .then((upload) => {
-          this.setData({ imageFileID: upload.fileID })
-          if (previousFileID && previousFileID !== upload.fileID) wx.cloud.deleteFile({ fileList: [previousFileID] }).catch(() => {})
-          return wx.cloud.callFunction({ name: "analyzeMealImage", data: { fileID: upload.fileID, profile: visionProfile } })
-        })
-        .then((response) => {
-          const result = response.result || {}
-          if (!result.ok || !result.analysis) {
-            throw new Error(result.message || "暂时无法识别这张图片")
-          }
-          const analysis = result.analysis
-          const ingredients = Array.isArray(analysis.ingredients) ? analysis.ingredients : []
-          const adviceFallback = ROLE_ADVICE_FALLBACKS[visionProfile.profileMode] || ROLE_ADVICE_FALLBACKS.health
-          const selectedDish = {
-            id: `vision-${Date.now()}`,
-            title: analysis.dishName || "图片中的餐食",
-            cuisine: "图片识别",
-            slotLabel: "视觉估算",
-            foodsText: ingredients.map((item) => `${item.name} ${item.grams || ""}g`).join(" · ") || "主要食材待确认",
-            kcal: Number(analysis.kcal) || ingredients.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0),
-            protein: Number(analysis.protein) || 0,
-            carbs: Number(analysis.carbs) || 0,
-            fat: Number(analysis.fat) || 0,
-            fiber: Number(analysis.fiber) || Number(analysis.nutrients && analysis.nutrients.fiber) || 0,
-            nutritionDetails: nutrientDetails(analysis),
-            adviceTitle: analysis.adviceTitle || adviceFallback.title,
-            advice: analysis.advice || adviceFallback.advice
-            ,photoScore: Math.max(0, Math.min(100, Number(analysis.score) || 0))
-            ,photoScoreTitle: String(analysis.scoreTitle || "营养点评").slice(0, 4)
-          }
-          this.setData({ analyzing: false, analysis, selectedDish, selectedMeasureUnit: "g", serving: 1, customServingGrams: String(dishServingAmount(selectedDish)), autoSaveStatus: "" }, () => {
-            this.calculate(() => this.saveVisionLog())
-          })
-        })
-        .catch((error) => this.setData({ analyzing: false, analysisError: error.message || "识别失败，请直接搜索菜名记录" }))
-    } })
+      const upload = await wx.cloud.uploadFile({ cloudPath, filePath })
+      this.setData({ imageFileID: upload.fileID })
+      if (previousFileID && previousFileID !== upload.fileID) wx.cloud.deleteFile({ fileList: [previousFileID] }).catch(() => {})
+      const response = await wx.cloud.callFunction({ name: "analyzeMealImage", data: { fileID: upload.fileID, profile: visionProfile } })
+      const result = response.result || {}
+      if (!result.ok || !result.analysis) {
+        throw new Error(result.message || "暂时无法识别这张图片")
+      }
+      const analysis = result.analysis
+      const ingredients = Array.isArray(analysis.ingredients) ? analysis.ingredients : []
+      const adviceFallback = ROLE_ADVICE_FALLBACKS[visionProfile.profileMode] || ROLE_ADVICE_FALLBACKS.health
+      const selectedDish = {
+        id: `vision-${Date.now()}`,
+        title: analysis.dishName || "图片中的餐食",
+        cuisine: "图片识别",
+        slotLabel: "视觉估算",
+        foodsText: ingredients.map((item) => `${item.name} ${item.grams || ""}g`).join(" · ") || "主要食材待确认",
+        kcal: Number(analysis.kcal) || ingredients.reduce((sum, item) => sum + (Number(item.kcal) || 0), 0),
+        protein: Number(analysis.protein) || 0,
+        carbs: Number(analysis.carbs) || 0,
+        fat: Number(analysis.fat) || 0,
+        fiber: Number(analysis.fiber) || Number(analysis.nutrients && analysis.nutrients.fiber) || 0,
+        nutritionDetails: nutrientDetails(analysis),
+        adviceTitle: analysis.adviceTitle || adviceFallback.title,
+        advice: analysis.advice || adviceFallback.advice
+        ,photoScore: Math.max(0, Math.min(100, Number(analysis.score) || 0))
+        ,photoScoreTitle: String(analysis.scoreTitle || "营养点评").slice(0, 4)
+      }
+      this.setData({ analyzing: false, analysis, selectedDish, selectedMeasureUnit: "g", serving: 1, customServingGrams: String(dishServingAmount(selectedDish)), autoSaveStatus: "" }, () => {
+        this.calculate(() => this.saveVisionLog())
+      })
+    } catch (error) {
+      this.setData({ analyzing: false, analysisError: (error && error.message) || "识别失败，请直接搜索菜名记录" })
+    }
   },
   removePhoto() {
     const imageFileID = this.data.imageFileID
